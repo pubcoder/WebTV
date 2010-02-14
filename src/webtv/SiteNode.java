@@ -70,7 +70,7 @@ public abstract class SiteNode extends DefaultMutableTreeNode {
             };
     private Runnable change = new Runnable(){
                 public void run() {
-                    model.nodeStructureChanged(SiteNode.this);
+                    model.nodeChanged(SiteNode.this);
                 }
             };
 

@@ -5,17 +5,21 @@
 
 package webtv;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -40,6 +44,7 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
     JPopupMenu prodMenu;
     Queue<Product> queue = new ConcurrentLinkedQueue<Product>();
     HashSet<Product> active = new HashSet<Product>();
+    static final String pngs[] = {"tv3-16.png","tv3-24.png","tv3-32.png","tv3-48.png","tv3-64.png" };
     public Main(){
         model = new DefaultTreeModel(null);
         root = new SiteMapNode(model, "TV3 Lithuania", "0");
@@ -56,21 +61,33 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
         nodeMenu = createNodeMenu();
         prodMenu = createProductMenu();
         add(new JScrollPane(tree));
+        ArrayList<Image> imageList = new ArrayList<Image>(pngs.length);
+        for (String name: pngs) {
+            ImageIcon i = new ImageIcon(getClass().getResource("/webtv/"+name));
+            if (i != null) imageList.add(i.getImage());
+        }
+        if (!imageList.isEmpty()) setIconImages(imageList);
+
         setTitle("WebTV :-)");
-        setSize(570, 750);
+        setSize(800, 750);
         setVisible(true);
 //        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosed(WindowEvent e){
-                for (Product p: queue)
-                    p.setScheduled(false);
-                queue.clear();
-                Iterator<Product> i = active.iterator();
-                while (i.hasNext()) {
-                    Product p = i.next();
-                    active.remove(p);
-                    p.cancelDownload();
+            public void windowClosing(WindowEvent e) {
+                try {
+                    for (Product p : queue) {
+                        p.setScheduled(false);
+                    }
+                    queue.clear();
+                    Iterator<Product> i = active.iterator();
+                    while (i.hasNext()) {
+                        Product p = i.next();
+                        p.cancelDownload();
+                    }
+                    active.clear();
+                } catch (Exception ex) {
+                    ex.printStackTrace(System.err);
                 }
                 System.exit(0);
             }
@@ -78,57 +95,83 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
     }
 
     public void finished(Product p) {
-        active.remove(p);
+        boolean c = active.remove(p);
+        if (!c) {
+            System.err.println("Completed download ("+p+") but it was not among active!");
+        }
         p.removeDownloadListener(this);
-        if (active.isEmpty()) {
-            p = queue.poll();            
-            p.addDownloadListener(this);
-            p.download();
-            active.add(p);
+        if (active.isEmpty()) {            
+            if (!queue.isEmpty()) {
+                //System.out.println("Starting new download");
+                p = queue.poll();
+                p.addDownloadListener(this);
+                p.download();
+                active.add(p);
+            } else {
+                //System.out.println("Empty queue");
+            }
         }
     }
 
     class PopupListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
-            maybeShowPopup(e);
+            showPopup(e);
         }
         @Override
         public void mouseReleased(MouseEvent e) {
-            maybeShowPopup(e);
+            if (!showPopup(e)) {
+                int selRow = tree.getRowForLocation(e.getX(), e.getY());
+                TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+                //System.out.println("Mouse released at row="+selRow);
+                if (selRow != -1) {
+                    if (e.getClickCount() == 2) {
+                        //System.out.println("DoubleClick");
+                        Object o = selPath.getLastPathComponent();
+                        if (o instanceof Product) {
+                            Product p = (Product) o;
+                            Product.State s = p.getState();
+                            switch (s) {
+                                default:
+                                case Unknown:
+                                case Incomplete:
+                                case Deleted:
+                                    enqueue(p);
+                                    break;
+                                case Downloading:
+                                case Ready:
+                                case Exists:
+                                    p.play();
+                                    break;
+                                case Scheduled:
+                                    if (active.size()<2)
+                                        download(p);
+                                    break;
+                                case Loading:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
         }
-        private void maybeShowPopup(MouseEvent e) {
+        private boolean showPopup(MouseEvent e) {
             if (e.isPopupTrigger()) {
                 TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
                 tree.setSelectionPath(path);
                 Object o = path.getLastPathComponent();
                 if (o instanceof Product) prodMenu.show(e.getComponent(),e.getX(), e.getY());
                 else nodeMenu.show(e.getComponent(),e.getX(), e.getY());
-            }
+                return true;
+            } else return false;
         }
     }
 
-
-    /*
     MouseListener ml = new MouseAdapter() {
         @Override
         public void mouseReleased(MouseEvent e) {            
-            int selRow = tree.getRowForLocation(e.getX(), e.getY());
-            TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-            //System.out.println("Mouse released at row="+selRow);
-            if (selRow != -1) {
-                if (e.getClickCount() == 2) {
-                    //System.out.println("DoubleClick");
-                    Object o = selPath.getLastPathComponent();
-                    if (o instanceof Product) {
-                        Product p = (Product)o;
-                        p.download(model);
-                    }
-                }
-            }
         }
     };
-     */
 
     JPopupMenu createNodeMenu(){
         JPopupMenu menu = new JPopupMenu();
@@ -139,11 +182,13 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
 
     JPopupMenu createProductMenu(){
         JPopupMenu menu = new JPopupMenu();
-        JMenuItem mi = new JMenuItem("Enqueue");
+        JMenuItem mi = new JMenuItem("Launch");
+        mi.addActionListener(this); menu.add(mi);
+        mi = new JMenuItem("Enqueue");
         mi.addActionListener(this); menu.add(mi);
         mi = new JMenuItem("Download");
         mi.addActionListener(this); menu.add(mi);
-        mi = new JMenuItem("Launch");
+        mi = new JMenuItem("Play");
         mi.addActionListener(this); menu.add(mi);
         mi = new JMenuItem("Delete");
         mi.addActionListener(this); menu.add(mi);
@@ -167,6 +212,24 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
     public void treeWillCollapse(TreeExpansionEvent arg0) throws ExpandVetoException {        
     }
 
+    protected void enqueue(Product p) {
+        if (active.isEmpty()) {
+            p.addDownloadListener(this);
+            p.download();
+            active.add(p);
+        } else {
+            p.setScheduled(true);
+            queue.add(p);
+        }
+    }
+
+    protected void download(Product p) {
+        queue.remove(p);
+        p.addDownloadListener(this);
+        p.download();
+        active.add(p);
+    }
+
     public void actionPerformed(ActionEvent e) {
         TreePath path = tree.getSelectionPath();
         if (path != null) {
@@ -177,20 +240,11 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
                 if ("Refresh".equals(cmd)) {
                     p.refresh();
                 } else if ("Enqueue".equals(cmd)) {
-                    if (active.isEmpty()) {
-                        p.addDownloadListener(this);
-                        p.download();
-                        active.add(p);
-                    } else {
-                        p.setScheduled(true);
-                        queue.add(p);
-                    }
+                    enqueue(p);
                 } else if ("Download".equals(cmd)) {
-                    p.addDownloadListener(this);
-                    p.download();
-                    active.add(p);
-                } else if ("Launch".equals(cmd)) {
-                    p.launch();
+                    download(p);
+                } else if ("Play".equals(cmd)) {
+                    p.play();
                 } else if ("Delete".equals(cmd)) {
                     p.delete();
                 }

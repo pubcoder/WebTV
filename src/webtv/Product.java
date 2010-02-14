@@ -9,7 +9,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.TreeSet;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
@@ -41,8 +41,8 @@ public class Product extends SiteNode {
             state = State.Unknown;
         }
     }
-    enum State { Unknown, Loading, Downloading, Incomplete, Ready, Exists, Deleted , Scheduled};
-    State state = State.Unknown;
+    public enum State { Unknown, Loading, Downloading, Incomplete, Ready, Exists, Deleted, Scheduled };
+    protected State state = State.Unknown;
     boolean seen = false;
 
     public Product(DefaultTreeModel model, String title, String id){
@@ -206,7 +206,9 @@ public class Product extends SiteNode {
         repaintChange();
     }
 
-    public void launch() {
+    public State getState(){ return state; }
+
+    public void play() {
         if (State.Unknown.equals(state) || State.Loading.equals(state)) return;
         String cmd[] = {"/usr/bin/totem", filename};
         try {
@@ -220,10 +222,12 @@ public class Product extends SiteNode {
     public void delete(){
         new File(filename).delete();
         state = State.Deleted;
+        repaintChange();
     }
     public void setScheduled(boolean b) {
         if (b) state = State.Scheduled;
         else checkFileState();
+        repaintChange();
     }
 /*
     State updateState(){
@@ -258,7 +262,7 @@ public class Product extends SiteNode {
         }
         return r;
     }
-    TreeSet<DownloadListener> listeners =  new TreeSet<DownloadListener>();
+    HashSet<DownloadListener> listeners =  new HashSet<DownloadListener>();
     public void addDownloadListener(DownloadListener d) {
         listeners.add(d);
     }
