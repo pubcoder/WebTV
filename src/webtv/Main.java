@@ -6,19 +6,28 @@
 package webtv;
 
 import java.awt.Image;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -37,6 +46,7 @@ import javax.swing.tree.TreeSelectionModel;
  * @author marius
  */
 public class Main extends JFrame implements TreeWillExpandListener, ActionListener, DownloadListener {
+    static final int MAX_DOWNLOADS = 1;
     JTree tree;
     SiteNode root;
     DefaultTreeModel model;
@@ -55,9 +65,42 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
         tree.setEditable(false);
         tree.addTreeWillExpandListener(this);
         tree.addMouseListener(new PopupListener());
-        //tree.addMouseListener(ml);
         //tree.getModel().valueForPathChanged(arg0, tree)
         tree.setShowsRootHandles(true);
+        tree.addKeyListener(new KeyListener(){
+            public void keyTyped(KeyEvent e) {
+                TreePath path = tree.getSelectionPath();
+                Object o = path.getLastPathComponent();
+                if (path == null) return;
+                switch (e.getKeyChar()) {
+                    case 10:
+                    case 13:
+                        execute(path);
+                        break;
+                    case KeyEvent.VK_PROPS:
+                        Point point = tree.getMousePosition();
+                        if (o instanceof Product) {
+                            prodMenu.show(tree, point.x, point.y);
+                        } else {
+                            nodeMenu.show(tree, point.x, point.y);
+                        }
+                        break;
+                    case 127:
+                        if (o instanceof Product) {
+                            Product p = (Product) o;
+                            p.delete();
+                        } else if (o instanceof WGetNode){
+                            WGetNode w = (WGetNode) o;
+                            w.delete();
+                        }
+                        break;
+                    default:
+                        System.out.println("Typed: "+((int)e.getKeyChar())+" "+e);
+                }
+            }
+            public void keyPressed(KeyEvent e) {}
+            public void keyReleased(KeyEvent e) {}
+        });
         nodeMenu = createNodeMenu();
         prodMenu = createProductMenu();
         add(new JScrollPane(tree));
@@ -121,36 +164,32 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
         @Override
         public void mouseReleased(MouseEvent e) {
             if (!showPopup(e)) {
-                int selRow = tree.getRowForLocation(e.getX(), e.getY());
-                TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-                //System.out.println("Mouse released at row="+selRow);
-                if (selRow != -1) {
-                    if (e.getClickCount() == 2) {
-                        //System.out.println("DoubleClick");
-                        Object o = selPath.getLastPathComponent();
-                        if (o instanceof Product) {
-                            Product p = (Product) o;
-                            Product.State s = p.getState();
-                            switch (s) {
-                                default:
-                                case Unknown:
-                                case Incomplete:
-                                case Deleted:
-                                    enqueue(p);
-                                    break;
-                                case Downloading:
-                                case Ready:
-                                case Exists:
-                                    p.play();
-                                    break;
-                                case Scheduled:
-                                    if (active.size()<2)
-                                        download(p);
-                                    break;
-                                case Loading:
-                                    break;
-                            }
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    int selRow = tree.getRowForLocation(e.getX(), e.getY());
+                    TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+                    //System.out.println("Mouse released at row="+selRow);
+                    if (selRow != -1) {
+                        if (e.getClickCount() == 2) {
+                            //System.out.println("DoubleClick");
+                            execute(path);
                         }
+                    }
+                } else if (e.getButton() == MouseEvent.BUTTON2) {
+                    try {
+                        String sel = (String) Toolkit.getDefaultToolkit().getSystemSelection().getData(DataFlavor.stringFlavor);
+                        if (sel == null) {
+                            sel = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+                        }
+                        URL url = new URL(sel);
+                        if ("http".equals(url.getProtocol()) || "https".equals(url.getProtocol())) {
+                            root.add(new WGetNode(model, url));
+                            root.repaintStructure();
+                        }
+                    } catch (java.net.MalformedURLException ex) {
+                    } catch (UnsupportedFlavorException ex) {
+                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
@@ -160,10 +199,47 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
                 TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
                 tree.setSelectionPath(path);
                 Object o = path.getLastPathComponent();
-                if (o instanceof Product) prodMenu.show(e.getComponent(),e.getX(), e.getY());
-                else nodeMenu.show(e.getComponent(),e.getX(), e.getY());
+                if (o instanceof Product | o instanceof WGetNode) {
+                    prodMenu.show(e.getComponent(), e.getX(), e.getY());
+                } else if (o instanceof SiteNode) {
+                    nodeMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
                 return true;
             } else return false;
+        }
+    }
+
+    public void execute(TreePath path) {
+        Object o = path.getLastPathComponent();
+        if (o instanceof Product) {
+            Product p = (Product) o;
+            Product.State s = p.getState();
+            switch (s) {
+                default:
+                case Unknown:
+                case Incomplete:
+                case Deleted:
+                    enqueue(p);
+                    break;
+                case Downloading:
+                case Ready:
+                case Exists:
+                    p.play();
+                    break;
+                case Scheduled:
+                    if (active.size() < MAX_DOWNLOADS) {
+                        download(p);
+                    }
+                    break;
+                case Loading:
+                    break;
+            }
+        } else if (o instanceof SiteNode){
+            tree.expandPath(path);
+        } else if (o instanceof WGetNode) {
+            WGetNode w = (WGetNode) o;
+            if (w.isReady()) w.play();
+            else if (!w.isBusy()) w.download();
         }
     }
 
@@ -242,15 +318,28 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
                 } else if ("Enqueue".equals(cmd)) {
                     enqueue(p);
                 } else if ("Download".equals(cmd)) {
-                    download(p);
+                    if (active.size() < MAX_DOWNLOADS) {
+                        download(p);
+                    } else {
+                        enqueue(p);
+                    }
                 } else if ("Play".equals(cmd)) {
                     p.play();
                 } else if ("Delete".equals(cmd)) {
                     p.delete();
                 }
-            } else {
+            } else if (o instanceof SiteNode) {
                 SiteNode node = (SiteNode)o;
                 node.refresh();
+            } else if (o instanceof WGetNode) {
+                WGetNode w = (WGetNode)o;
+                if ("Download".equals(cmd)) {
+                    w.download();
+                } else if ("Play".equals(cmd)) {
+                    w.play();
+                } else if ("Delete".equals(cmd)) {
+                    w.delete();
+                }
             }
         }
     }

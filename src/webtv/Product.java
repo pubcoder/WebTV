@@ -115,8 +115,23 @@ public class Product extends SiteNode {
     boolean downloading = false;
 
     String[] getDownloadCommand(){
-        String downCmd[] = { "/usr/bin/rtmpdump", "-r", video, "-o", filename };
-        String resumeCmd[] = { "/usr/bin/rtmpdump", "--resume", "-r", video, "-o", filename };
+        /*
+         * How to get swfsize and swfhash:
+         * download the player:
+         * wget "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf"
+         * "unzip" it:
+         * flasm -x syndicated.swf
+         * check the unzipped size:
+         * ls -l syndicated.swf
+         * compute the SHA256:
+         * openssl sha -sha256 -hmac "Genuine Adobe Flash Player 001" syndicated.swf
+         */
+        String downCmd[] = { "/usr/bin/rtmpdump", "--swfhash",
+            "b8880becde3d77d6c11f9ef453053617667eaf4890f1f8748035f4003d70eeda",
+            "--swfsize", "28811032", "-r", video, "-o", filename };
+        String resumeCmd[] = { "/usr/bin/rtmpdump", "--swfhash",
+            "b8880becde3d77d6c11f9ef453053617667eaf4890f1f8748035f4003d70eeda",
+            "--swfsize", "28811032", "--resume", "-r", video, "-o", filename };
         return downCmd;/*
         if (State.Unknown.equals(state) || State.Loading.equals(state)) return downCmd;
         else return resumeCmd;*/
@@ -137,6 +152,7 @@ public class Product extends SiteNode {
                 String cmd[] = getDownloadCommand();
                 try {
                     //System.out.println("Executing download");
+                    System.out.println("Downloading: "+video);
                     downloader = Runtime.getRuntime().exec(cmd);
                     BufferedReader reader = new BufferedReader(
                             new InputStreamReader(downloader.getErrorStream()));
@@ -214,6 +230,7 @@ public class Product extends SiteNode {
         try {
             Runtime.getRuntime().exec(cmd);
             seen = true;
+            this.repaintChange();
         } catch (IOException ex) {
             Logger.getLogger(Product.class.getName()).log(Level.SEVERE, null, ex);
         }

@@ -12,8 +12,6 @@ import java.net.URL;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -25,19 +23,17 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author marius
  */
-public abstract class SiteNode extends DefaultMutableTreeNode {
+public abstract class SiteNode extends CommonNode {
     private static String agent = "Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/532.8 (KHTML, like Gecko) Chrome/4.0.295.0 Safari/532.8";
     protected static SAXParserFactory factory;
     protected SAXParser parser;
-    protected DefaultTreeModel model;
     protected String title, id;
     protected String status;
     protected boolean busy = false, refreshing = false;
     protected TreeSet<String> ids = new TreeSet<String>();
 
-
     public SiteNode(DefaultTreeModel model, String title, String id){
-        this.model = model;
+        super(model);
         this.title = title;
         this.id = id;
 
@@ -60,40 +56,6 @@ public abstract class SiteNode extends DefaultMutableTreeNode {
     protected abstract String getURL();
     protected abstract String getReferer();
     protected abstract DefaultHandler getHandler();
-
-
-    private Runnable changeAndStruct = new Runnable(){
-                public void run() {
-                    model.nodeChanged(SiteNode.this);
-                    model.nodeStructureChanged(SiteNode.this);
-                }
-            };
-    private Runnable change = new Runnable(){
-                public void run() {
-                    model.nodeChanged(SiteNode.this);
-                }
-            };
-
-    private Runnable struct = new Runnable(){
-                public void run() {
-                    model.nodeStructureChanged(SiteNode.this);
-                }
-            };
-
-
-    protected void repaintChangeAndStructure(){
-        setUserObject(this.toString());
-        SwingUtilities.invokeLater(changeAndStruct);
-    }
-
-    protected void repaintChange(){
-        setUserObject(this.toString());
-        SwingUtilities.invokeLater(change);
-    }
-    protected void repaintStructure(){
-        setUserObject(this.toString());
-        SwingUtilities.invokeLater(struct);
-    }
 
     protected void reload() {
         if (busy) return;
