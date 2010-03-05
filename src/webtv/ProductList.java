@@ -14,7 +14,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author marius
  */
 public class ProductList extends SiteNode {
-    public static final String url = "http://viastream.player.mtgnewmedia.se/xml/xmltoplayer.php?type=Products&category=";
+    public static final String url = "http://viastream.viasat.tv/Products/Category/";
     public static final String referer = SiteMapNode.referer;
 
     public ProductList(DefaultTreeModel model, String title, String id){

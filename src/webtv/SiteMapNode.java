@@ -5,7 +5,6 @@
 
 package webtv;
 
-import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
@@ -15,7 +14,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author marius
  */
 public class SiteMapNode extends SiteNode {
-    public static final String url = "http://viastream.player.mtgnewmedia.se/xml/xmltoplayer.php?type=siteMapData&channel=2lt&country=lt&category=";
+    public static final String url = "http://viastream.viasat.tv//siteMapData/lt/2lt/";
     public static final String referer = "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf";    
     
     public SiteMapNode(DefaultTreeModel model, String title, String id) {

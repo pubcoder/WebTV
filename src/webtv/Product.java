@@ -21,7 +21,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author marius
  */
 public class Product extends SiteNode {
-    public static final String url = "http://viastream.player.mtgnewmedia.se/xml/xmltoplayer.php?type=Products&clipid=";
+    public static final String url = "http://viastream.viasat.tv/products/";
     public static final String referer = SiteMapNode.referer;
     public String filename;
     protected String video;
