@@ -71,6 +71,7 @@ public class Product extends SiteNode {
         switch (field) {
             case 5: video = new String(ch, start, length); break;
         }
+        //System.out.println(new String(ch, start, length));
     }
 
 
@@ -88,6 +89,7 @@ public class Product extends SiteNode {
         } else if (field==4 && "Url".equals(qName)) {
             field = 5;
         }
+        //System.out.println("<"+qName+">");
     }
 
     @Override
@@ -103,7 +105,8 @@ public class Product extends SiteNode {
             field = 1;
         } else if (field==1 && "Products".equals(qName)) {
             field = 0;
-        } 
+        }
+        //System.out.println("</"+qName+">");
     }
     };
 
@@ -147,12 +150,15 @@ public class Product extends SiteNode {
             public void run() {
                 //System.out.println("Loading product");
                 reload();
-                status = "downloading";
-                repaintChange();
-                String cmd[] = getDownloadCommand();
                 try {
+                    if (video == null || video.length() == 0) {
+                        throw new Exception("No video URL");
+                    }
+                    status = "downloading";
+                    repaintChange();
+                    String cmd[] = getDownloadCommand();
                     //System.out.println("Executing download");
-                    System.out.println("Downloading: "+video);
+                    System.out.println("Downloading: " + video);
                     downloader = Runtime.getRuntime().exec(cmd);
                     BufferedReader reader = new BufferedReader(
                             new InputStreamReader(downloader.getErrorStream()));
@@ -168,8 +174,8 @@ public class Product extends SiteNode {
                         i = line.indexOf("filesize");
                         line = reader.readLine();
                     }
-                    if (i>=0) {
-                        size = Integer.parseInt(line.substring(i+8).trim());
+                    if (i >= 0) {
+                        size = Integer.parseInt(line.substring(i + 8).trim());
                     }
                     while (line != null) {
                         line = line.trim();
@@ -180,13 +186,13 @@ public class Product extends SiteNode {
                         }
                         line = reader.readLine();
                     }
-/*                    p.getInputStream().close();
+                    /*                    p.getInputStream().close();
                     p.getOutputStream().close();
                     p.getErrorStream().close();*/
                     i = downloader.waitFor();
                     downloader = null;
-                    if (i!=0) {
-                        status = status + " {"+i + "}";
+                    if (i != 0) {
+                        status = status + " {" + i + "}";
                         state = State.Incomplete;
                     } else {
                         status = null;
@@ -194,16 +200,26 @@ public class Product extends SiteNode {
                     }
                     //System.out.println("Finished download");
                 } catch (InterruptedException ex) {
-                    Logger.getLogger(Product.class.getName()).log(Level.SEVERE, null, ex);
+                    checkFileState();
+                    status = ex.getMessage();
+                    //ex.printStackTrace(System.err);
                 } catch (IOException ex) {
-                    Logger.getLogger(Product.class.getName()).log(Level.SEVERE, null, ex);
+                    if (state != State.Deleted) {
+                        checkFileState();
+                        status = ex.getMessage();
+                        ex.printStackTrace(System.err);
+                    } else status = "{killed}";
+                } catch (Exception ex) {
+                    checkFileState();
+                    status = ex.getMessage();
+                    ex.printStackTrace(System.err);
                 }
                 downloading = false;
                 repaintChange();
                 for (DownloadListener l: listeners)
                     l.finished(Product.this);
             }
-        }).start();
+        }, "Download").start();
     }
 
     public void cancelDownload(){
@@ -226,7 +242,7 @@ public class Product extends SiteNode {
 
     public void play() {
         if (State.Unknown.equals(state) || State.Loading.equals(state)) return;
-        String cmd[] = {"/usr/bin/totem", filename};
+        String cmd[] = {"/usr/bin/totem", "--enqueue", filename};
         try {
             Runtime.getRuntime().exec(cmd);
             seen = true;
@@ -239,6 +255,10 @@ public class Product extends SiteNode {
     public void delete(){
         new File(filename).delete();
         state = State.Deleted;
+        if (downloader != null) {
+            downloader.destroy();
+            downloader = null;
+        }
         repaintChange();
     }
     public void setScheduled(boolean b) {
@@ -268,9 +288,8 @@ public class Product extends SiteNode {
         if (seen) r = r+" [seen]";
         switch (state) {
             case Unknown:
-                break;
-            case Downloading: 
-                r = r + " ["+status+"]";
+            case Downloading:
+                if (status != null) r = r + " ["+status+"]";
                 break;
             default: 
                 if (status==null) r = r +" ["+state+"]";
