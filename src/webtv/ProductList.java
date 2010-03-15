@@ -85,6 +85,7 @@ public class ProductList extends SiteNode {
         return handler;
     }
     
+    @Override
     public boolean isLeaf(){ return false; }
 
 }

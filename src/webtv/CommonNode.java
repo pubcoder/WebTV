@@ -54,4 +54,6 @@ public class CommonNode extends DefaultMutableTreeNode {
         SwingUtilities.invokeLater(struct);
     }
 
+    void refresh() {}
+
 }

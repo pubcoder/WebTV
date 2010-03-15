@@ -20,6 +20,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,6 +51,7 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
     static final int MAX_DOWNLOADS = 1;
     JTree tree;
     SiteNode root;
+    FileLinkList files;
     DefaultTreeModel model;
     JPopupMenu nodeMenu;
     JPopupMenu prodMenu;
@@ -60,6 +63,7 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
         root = new SiteMapNode(model, "TV3 Lithuania", "0");
         model.setRoot(root);
         tree = new JTree(model);
+        root.add(files = new FileLinkList(model));
         root.refresh();
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setEditable(false);
@@ -180,12 +184,16 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
                         if (sel == null) {
                             sel = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
                         }
-                        URL url = new URL(sel);
-                        if ("http".equals(url.getProtocol()) || "https".equals(url.getProtocol())) {
-                            root.add(new WGetNode(model, url));
-                            root.repaintStructure();
+                        URI url = new URI(sel);
+                        String scheme = url.getScheme();
+                        if ("http".equals(scheme) || "https".equals(scheme)) {
+                            files.add(new WGetNode(model, url));
+                            files.repaintStructure();
                         }
+                    } catch (URISyntaxException ex) {
+                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (java.net.MalformedURLException ex) {
+                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (UnsupportedFlavorException ex) {
                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (IOException ex) {
@@ -199,9 +207,9 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
                 TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
                 tree.setSelectionPath(path);
                 Object o = path.getLastPathComponent();
-                if (o instanceof Product | o instanceof WGetNode) {
+                if (o instanceof Product || o instanceof WGetNode) {
                     prodMenu.show(e.getComponent(), e.getX(), e.getY());
-                } else if (o instanceof SiteNode) {
+                } else if (o instanceof SiteNode || o instanceof FileLinkList) {
                     nodeMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
                 return true;
@@ -236,6 +244,8 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
             }
         } else if (o instanceof SiteNode){
             tree.expandPath(path);
+        } else if (o instanceof FileLinkList){
+            ((FileLinkList)o).refresh();
         } else if (o instanceof WGetNode) {
             WGetNode w = (WGetNode) o;
             if (w.isReady()) w.play();
@@ -281,7 +291,7 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
 
     public void treeWillExpand(TreeExpansionEvent e) throws ExpandVetoException {
         //System.out.println("willexpand");
-        SiteNode node = (SiteNode)e.getPath().getLastPathComponent();
+        CommonNode node = (CommonNode)e.getPath().getLastPathComponent();
         node.refresh();
     }
 

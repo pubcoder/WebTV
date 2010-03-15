@@ -9,7 +9,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
@@ -19,23 +20,30 @@ import javax.swing.tree.DefaultTreeModel;
  * @author marius
  */
 public class WGetNode extends CommonNode {
-    URL addr;
-    String filename;
+    URI addr;
+    String filename, scheme;
     String status = null;
     boolean ready = false, seen = false;
     boolean downloading = false;
     Process downloader = null;
 
 
-    public WGetNode(DefaultTreeModel model, URL url){
+    public WGetNode(DefaultTreeModel model, URI uri){
         super(model);
-        addr = url;
-        filename = addr.getFile();
+        addr = uri;
+        scheme = addr.getScheme();
+        try {
+            filename = addr.toURL().getFile();
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
+        }
         int slash = filename.lastIndexOf('/');
         if (slash >= 0) filename = filename.substring(slash+1);
-        File f = new File(filename);
+        File f;
+        if ("file".equals(scheme)) f = new File(addr);
+        else f = new File("wget/"+filename);
         if (f.exists()) { status = "[exists]"; }
-        this.setUserObject(filename);
+        setUserObject(filename);
     }
 
     public void cancelDownload(){
@@ -82,6 +90,7 @@ public class WGetNode extends CommonNode {
 
     public void download() {
         if (downloading) return;
+        if ("file".equals(addr.getScheme())) return;
         downloading = true;
         new Thread(new Runnable(){
             public void run() {
@@ -89,7 +98,8 @@ public class WGetNode extends CommonNode {
                 status = "downloading";
                 repaintChange();
                 String cmd[] = new String[] {
-                    "/usr/bin/wget", "-c", addr.toString()
+                    "/usr/bin/wget", "-c", addr.toString(), 
+                    "-O", "wget/"+filename
                 };
                 try {
                     //System.out.println("Executing download");
