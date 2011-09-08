@@ -9,8 +9,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
@@ -21,29 +23,37 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class WGetNode extends CommonNode {
     URI addr;
-    String filename, scheme;
+    String title, filename, scheme;
     String status = null;
     boolean ready = false, seen = false;
     boolean downloading = false;
     Process downloader = null;
 
 
-    public WGetNode(DefaultTreeModel model, URI uri){
+    public WGetNode(DefaultTreeModel model, URI uri)
+    {
         super(model);
         addr = uri;
         scheme = addr.getScheme();
         try {
-            filename = addr.toURL().getFile();
+            filename = URLDecoder.decode(addr.toURL().getFile(), "UTF-8");
+            int slash = filename.lastIndexOf('/');
+            if (slash >= 0) {
+                title = filename.substring(slash + 1);
+            } else {
+                title = filename;
+            }
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
+
         } catch (MalformedURLException ex) {
             Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
         }
-        int slash = filename.lastIndexOf('/');
-        if (slash >= 0) filename = filename.substring(slash+1);
         File f;
         if ("file".equals(scheme)) f = new File(addr);
-        else f = new File("wget/"+filename);
-        if (f.exists()) { status = "[exists]"; }
-        setUserObject(filename);
+        else f = new File(filename);
+        if (f.exists()) { status = "[exists]"; ready = true; }
+        setUserObject(title);
     }
 
     public void cancelDownload(){
@@ -65,7 +75,7 @@ public class WGetNode extends CommonNode {
     }
 
     public void delete(){
-        new File(filename).delete();
+        new File(addr).delete();
         ready = false;
         status = "[deleted]";
         repaintChange();
@@ -73,7 +83,7 @@ public class WGetNode extends CommonNode {
 
     @Override
     public String toString(){
-        String s = filename;
+        String s = title;
         if (seen) s += " [seen]";
         if (status != null) {
             return s+": "+status;

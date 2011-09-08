@@ -47,6 +47,7 @@ public abstract class SiteNode extends CommonNode {
         }
     }
 
+    @Override
     public void refresh(){
         new Thread(new Runnable(){
             public void run(){ reload(); }

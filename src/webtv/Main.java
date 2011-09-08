@@ -20,9 +20,9 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -187,11 +187,29 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
                         URI url = new URI(sel);
                         String scheme = url.getScheme();
                         if ("http".equals(scheme) || "https".equals(scheme)) {
-                            files.add(new WGetNode(model, url));
+                            if (url.getHost().contains("tv3play.lt")) {
+                                try {
+                                    String filename = url.toURL().getFile();
+                                    if (filename.indexOf('?') >= 0) {
+                                        filename = filename.substring(0, filename.indexOf('?'));
+                                    }
+                                    if (filename.endsWith("/")) {
+                                        filename = filename.substring(0, filename.length() - 1);
+                                    }
+                                    String[] path = filename.split("/");
+                                    String id = path[path.length - 1];
+                                    files.add(new TV3Play(model, id));
+                                } catch (MalformedURLException ex) {
+                                    Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+                                }
+                            } else {
+                                files.add(new WGetNode(model, url));
+                            }
+                            tree.expandRow(1);
                             files.repaintStructure();
                         }
                     } catch (URISyntaxException ex) {
-                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
                     } catch (java.net.MalformedURLException ex) {
                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (UnsupportedFlavorException ex) {

@@ -6,6 +6,7 @@
 package webtv;
 
 import java.io.File;
+import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
 
 /**
@@ -13,6 +14,7 @@ import javax.swing.tree.DefaultTreeModel;
  * @author marius
  */
 public class FileLinkList extends CommonNode {
+    TreeSet<File> files = new TreeSet<File>();
     public FileLinkList(final DefaultTreeModel model){
         super(model);
         setAllowsChildren(true);
@@ -28,8 +30,9 @@ public class FileLinkList extends CommonNode {
                 File dir = new File("wget");
                 if (dir.exists() && dir.isDirectory()) {
                     for (File f : dir.listFiles()) {
-                        if (f.isFile()) {
+                        if (f.isFile() && !files.contains(f)) {
                             add(new WGetNode(model, f.toURI()));
+                            files.add(f);
                         }
                     }
                     repaintStructure();

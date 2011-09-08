@@ -20,14 +20,17 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author marius
  */
-public class Product extends SiteNode {
-    public static final String url = "http://viastream.viasat.tv/products/";
-    public static final String referer = SiteMapNode.referer;
+public class Product extends SiteNode
+{
     public String filename;
-    protected String video;
+    protected String rtmp, titleField=null;
     public long size;
 
-    private void checkFileState() {
+    public enum State { Unknown, Loading, Downloading, Incomplete, Ready, Exists, Deleted, Scheduled };
+    protected State state = State.Unknown;
+    boolean seen = false;
+
+    protected void checkFileState() {
         File f = new File(filename);
         if (f.exists()) {
             if (size > 0) {
@@ -41,9 +44,6 @@ public class Product extends SiteNode {
             state = State.Unknown;
         }
     }
-    public enum State { Unknown, Loading, Downloading, Incomplete, Ready, Exists, Deleted, Scheduled };
-    protected State state = State.Unknown;
-    boolean seen = false;
 
     public Product(DefaultTreeModel model, String title, String id){
         super(model, title, id);
@@ -53,12 +53,12 @@ public class Product extends SiteNode {
 
     @Override
     protected String getURL() {
-        return (url+id);
+        return ("http://viastream.viasat.tv/products/"+id);
     }
 
     @Override
     protected String getReferer() {
-        return referer;
+        return SiteMapNode.referer;
     }
 
 
@@ -69,7 +69,8 @@ public class Product extends SiteNode {
     public void characters(char[] ch, int start, int length)
     {
         switch (field) {
-            case 5: video = new String(ch, start, length); break;
+            case 5: rtmp = new String(ch, start, length); break;
+            case 10: titleField = new String(ch, start, length); repaintChange(); break;
         }
         //System.out.println(new String(ch, start, length));
     }
@@ -82,6 +83,8 @@ public class Product extends SiteNode {
             field = 1;
         } else if (field==1 && "Product".equals(qName)) {
             field = 2;
+        } else if (field==2 && "Title".equals(qName)) {
+            field = 10;
         } else if (field==2 && "Videos".equals(qName)) {
             field = 3;
         } else if (field==3 && "Video".equals(qName)) {
@@ -95,7 +98,9 @@ public class Product extends SiteNode {
     @Override
     public void endElement(String uri, String localName, String qName)
     {
-        if (field==5 && "Url".equals(qName)) {
+        if (field==10 && "Title".equals(qName)) {
+            field = 2;
+        } else if (field==5 && "Url".equals(qName)) {
             field = 4;
         } else if (field==4 && "Video".equals(qName)) {
             field = 3;
@@ -117,7 +122,7 @@ public class Product extends SiteNode {
 
     boolean downloading = false;
 
-    String[] getDownloadCommand(){
+    protected String[] getDownloadCommand(){
         /*
          * How to get swfsize and swfhash:
          * download the player:
@@ -131,10 +136,10 @@ public class Product extends SiteNode {
          */
         String downCmd[] = { "/usr/bin/rtmpdump", "--swfhash",
             "b8880becde3d77d6c11f9ef453053617667eaf4890f1f8748035f4003d70eeda",
-            "--swfsize", "28811032", "-r", video, "-o", filename };
+            "--swfsize", "28811032", "-r", rtmp, "-o", filename };
         String resumeCmd[] = { "/usr/bin/rtmpdump", "--swfhash",
             "b8880becde3d77d6c11f9ef453053617667eaf4890f1f8748035f4003d70eeda",
-            "--swfsize", "28811032", "--resume", "-r", video, "-o", filename };
+            "--swfsize", "28811032", "--resume", "-r", rtmp, "-o", filename };
         return downCmd;/*
         if (State.Unknown.equals(state) || State.Loading.equals(state)) return downCmd;
         else return resumeCmd;*/
@@ -151,14 +156,14 @@ public class Product extends SiteNode {
                 //System.out.println("Loading product");
                 reload();
                 try {
-                    if (video == null || video.length() == 0) {
+                    if (rtmp == null || rtmp.length() == 0) {
                         throw new Exception("No video URL");
                     }
                     status = "downloading";
                     repaintChange();
                     String cmd[] = getDownloadCommand();
                     //System.out.println("Executing download");
-                    System.out.println("Downloading: " + video);
+                    System.out.println("Downloading: " + rtmp);
                     downloader = Runtime.getRuntime().exec(cmd);
                     BufferedReader reader = new BufferedReader(
                             new InputStreamReader(downloader.getErrorStream()));
@@ -168,7 +173,7 @@ public class Product extends SiteNode {
                         line = line.trim();
                         if (line.length() > 0) {
                             status = line;
-                            //System.out.println(status);
+                            // System.out.println(status);
                             repaintChange();
                         }
                         i = line.indexOf("filesize");
