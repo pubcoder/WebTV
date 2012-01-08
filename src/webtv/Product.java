@@ -15,22 +15,25 @@ import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
+import webtv.tv3webtv.SiteMapNode;
 
 /**
  *
  * @author marius
  */
-public class Product extends SiteNode
+public class Product extends XMLSiteNode
 {
     public String filename;
     protected String rtmp, titleField=null;
     public long size;
-
+    protected final String id;
+    private final String url;
+    
     public enum State { Unknown, Loading, Downloading, Incomplete, Ready, Exists, Deleted, Scheduled };
     protected State state = State.Unknown;
     boolean seen = false;
 
-    protected void checkFileState() {
+    protected final void checkFileState() {
         File f = new File(filename);
         if (f.exists()) {
             if (size > 0) {
@@ -46,23 +49,20 @@ public class Product extends SiteNode
     }
 
     public Product(DefaultTreeModel model, String title, String id){
-        super(model, title, id);
+        super(model, title);
+        this.handler = myhandler;
+        this.id = id;
+        this.url = "http://viastream.viasat.tv/products/"+id; 
         filename = title+".flv";
         checkFileState();
     }
 
     @Override
-    protected String getURL() {
-        return ("http://viastream.viasat.tv/products/"+id);
-    }
-
+    protected String getURL() { return url; }
     @Override
-    protected String getReferer() {
-        return SiteMapNode.referer;
-    }
-
-
-    DefaultHandler handler = new DefaultHandler(){
+    protected String getReferer() { return SiteMapNode.referer; }
+    
+    DefaultHandler myhandler = new DefaultHandler(){
     int field = 0;
 
     @Override
@@ -114,11 +114,6 @@ public class Product extends SiteNode
         //System.out.println("</"+qName+">");
     }
     };
-
-    @Override
-    protected DefaultHandler getHandler() {
-        return handler;
-    }
 
     boolean downloading = false;
 

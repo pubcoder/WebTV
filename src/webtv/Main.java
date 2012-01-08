@@ -5,6 +5,8 @@
 
 package webtv;
 
+import webtv.tv3play.Program;
+import webtv.tv3webtv.SiteMapNode;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -42,13 +44,16 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import webtv.tv3play.MainPage;
 
 /**
  *
  * @author marius
  */
-public class Main extends JFrame implements TreeWillExpandListener, ActionListener, DownloadListener {
-    static final int MAX_DOWNLOADS = 1;
+public class Main extends JFrame implements TreeWillExpandListener, 
+                                            ActionListener, DownloadListener
+{
+    static final int MAX_DOWNLOADS = 3;
     JTree tree;
     SiteNode root;
     FileLinkList files;
@@ -60,8 +65,9 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
     static final String pngs[] = {"tv3-16.png","tv3-24.png","tv3-32.png","tv3-48.png","tv3-64.png" };
     public Main(){
         model = new DefaultTreeModel(null);
-        root = new SiteMapNode(model, "TV3 Lithuania", "0");
+        root = new MainPage(model);
         model.setRoot(root);
+        root.add(new SiteMapNode(model, "TV3 Lithuania", "0"));        
         tree = new JTree(model);
         root.add(files = new FileLinkList(model));
         root.refresh();
@@ -198,7 +204,7 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
                                     }
                                     String[] path = filename.split("/");
                                     String id = path[path.length - 1];
-                                    files.add(new TV3Play(model, id));
+                                    files.add(new Program(model, id));
                                 } catch (MalformedURLException ex) {
                                     Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
                                 }
@@ -277,14 +283,14 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
         }
     };
 
-    JPopupMenu createNodeMenu(){
+    final JPopupMenu createNodeMenu(){
         JPopupMenu menu = new JPopupMenu();
         JMenuItem mi = new JMenuItem("Refresh");
         mi.addActionListener(this); menu.add(mi);
         return menu;
     }
 
-    JPopupMenu createProductMenu(){
+    final JPopupMenu createProductMenu(){
         JPopupMenu menu = new JPopupMenu();
         JMenuItem mi = new JMenuItem("Launch");
         mi.addActionListener(this); menu.add(mi);
@@ -317,7 +323,7 @@ public class Main extends JFrame implements TreeWillExpandListener, ActionListen
     }
 
     protected void enqueue(Product p) {
-        if (active.isEmpty()) {
+        if (active.size()<MAX_DOWNLOADS) {
             p.addDownloadListener(this);
             p.download();
             active.add(p);

@@ -3,25 +3,28 @@
  * and open the template in the editor.
  */
 
-package webtv;
+package webtv.tv3play;
 
 import java.io.File;
 import javax.swing.tree.DefaultTreeModel;
+import webtv.Product;
 
 /**
  *
  * @author marius
  */
-public class TV3Play extends Product
+public class Program extends Product
 {
     String refererRnd, swfRnd, page;
+    String url;
  
     boolean ready = false;
 
-    public TV3Play(DefaultTreeModel model, String id)
+    public Program(DefaultTreeModel model, String id)
     {
         super(model, "TV3Play-"+id, id);
         filename = "wget/"+title+".flv";
+        url = "http://viastream.viasat.tv/PlayProduct/"+id;
         checkFileState();
 
         page = "http://www.tv3play.lt/play/"+id+"/";
@@ -32,19 +35,26 @@ public class TV3Play extends Product
         refresh();
     }
 
+    public Program(DefaultTreeModel model, String id, String title)
+    {
+        super(model, title, id);
+        titleField = title;
+        filename = "wget/"+this.title+".flv";
+        url = "http://viastream.viasat.tv/PlayProduct/"+id;
+        checkFileState();
+
+        page = "http://www.tv3play.lt/play/"+id+"/";
+        long rnd = System.currentTimeMillis()/1000;
+        refererRnd = "http://flvplayer.viastream.viasat.tv/flvplayer/play/swf/player.swf?rnd="+rnd;
+        swfRnd = "http://flvplayer.viastream.viasat.tv/play/swf/player110516.swf?rnd="+rnd;
+        setUserObject(title);
+    }
+    
+    
     @Override
-    protected String getURL() { return "http://viastream.viasat.tv/PlayProduct/"+id; }
+    protected String getURL() { return url; }
     @Override
     protected String getReferer() { return (refererRnd); }
-
-    @Override
-    public String toString(){
-        String s = title;
-        if (seen) s += " [seen]";
-        if (status != null) {
-            return s+": "+status;
-        } else return s;
-    }
 
     @Override
     protected void reload(){

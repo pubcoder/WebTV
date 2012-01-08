@@ -13,38 +13,22 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import webtv.tv3webtv.SiteMapNode;
 
 /**
  *
  * @author marius
  */
-public abstract class SiteNode extends CommonNode {
-    private static String agent = "Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/532.8 (KHTML, like Gecko) Chrome/4.0.295.0 Safari/532.8";
-    protected static SAXParserFactory factory;
-    protected SAXParser parser;
-    protected String title, id;
+public abstract class SiteNode extends CommonNode
+{
+    protected static String agent = "Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/532.8 (KHTML, like Gecko) Chrome/4.0.295.0 Safari/532.8";
+    protected String title;
     protected String status;
     protected boolean busy = false, refreshing = false;
-    protected TreeSet<String> ids = new TreeSet<String>();
 
-    public SiteNode(DefaultTreeModel model, String title, String id){
+    public SiteNode(DefaultTreeModel model, String title){
         super(model);
         this.title = title;
-        this.id = id;
-
-        if (factory==null) factory = SAXParserFactory.newInstance();
-        try {
-            parser = factory.newSAXParser();
-        } catch (ParserConfigurationException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
-        } catch (SAXException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     @Override
@@ -56,7 +40,7 @@ public abstract class SiteNode extends CommonNode {
 
     protected abstract String getURL();
     protected abstract String getReferer();
-    protected abstract DefaultHandler getHandler();
+    protected abstract void parseDoc(InputStream is) throws IOException, Exception;
 
     protected void reload() {
         if (busy) return;
@@ -83,7 +67,7 @@ public abstract class SiteNode extends CommonNode {
             int res = con.getResponseCode();
             if (res == HttpURLConnection.HTTP_OK) {
                 InputStream is = con.getInputStream();
-                parser.parse(is, getHandler());
+                parseDoc(is);
                 is.close();
                 status = null;
             } else {
@@ -94,8 +78,10 @@ public abstract class SiteNode extends CommonNode {
             refreshing = true;
             repaintChangeAndStructure();
         } catch (IOException ex) {
+            status = ex.getMessage();
             Logger.getLogger(SiteMapNode.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SAXException ex) {
+        } catch (Exception ex) {
+            status = ex.getMessage();
             Logger.getLogger(SiteMapNode.class.getName()).log(Level.SEVERE, null, ex);
         }
         busy = false;
@@ -105,9 +91,5 @@ public abstract class SiteNode extends CommonNode {
     public String toString() {
         if (status==null) return title;
         else return title+" ["+status+"]";
-/*
-        if (status==null) return getClass().getSimpleName()+" "+title;
-        else return getClass().getSimpleName()+" "+title+" ["+status+"]";
- */
     }
 }

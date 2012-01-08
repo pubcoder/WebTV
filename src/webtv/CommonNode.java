@@ -13,13 +13,11 @@ import javax.swing.tree.DefaultTreeModel;
  *
  * @author marius
  */
-public class CommonNode extends DefaultMutableTreeNode {
-
+public class CommonNode extends DefaultMutableTreeNode
+{
     protected DefaultTreeModel model;
 
-    public CommonNode(DefaultTreeModel model){
-        this.model = model;
-    }
+    public CommonNode(DefaultTreeModel model){ this.model = model; }
 
     private Runnable changeAndStruct = new Runnable(){
                 public void run() {
@@ -38,7 +36,6 @@ public class CommonNode extends DefaultMutableTreeNode {
                     model.nodeStructureChanged(CommonNode.this);
                 }
             };
-
 
     protected void repaintChangeAndStructure(){
         setUserObject(this.toString());

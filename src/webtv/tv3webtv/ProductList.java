@@ -3,37 +3,40 @@
  * and open the template in the editor.
  */
 
-package webtv;
+package webtv.tv3webtv;
 
+import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
+import webtv.Product;
+import webtv.SiteNode;
+import webtv.XMLSiteNode;
 
 /**
  *
  * @author marius
  */
-public class ProductList extends SiteNode {
-    public static final String url = "http://viastream.viasat.tv/Products/Category/";
+public class ProductList extends XMLSiteNode {
+    public final String url;
     public static final String referer = SiteMapNode.referer;
+    private final String id;
+    protected TreeSet<String> ids = new TreeSet<String>();    
 
     public ProductList(DefaultTreeModel model, String title, String id){
-        super(model, title,id);
+        super(model, title);
+        this.handler = myhandler;
+        this.id = id;
+        this.url = "http://viastream.viasat.tv/Products/Category/"+id;
         setAllowsChildren(true);
     }
 
     @Override
-    protected String getURL() {
-        return (url+id);
-    }
-
+    protected String getURL() { return url; }
     @Override
-    protected String getReferer() {
-        return referer;
-    }
+    protected String getReferer() { return referer; }
 
-
-    DefaultHandler handler = new DefaultHandler() {
+    DefaultHandler myhandler = new DefaultHandler() {
 
         String prodId;
         String prodTitle;
@@ -79,13 +82,9 @@ public class ProductList extends SiteNode {
             }
         }
     };
-
-    @Override
-    protected DefaultHandler getHandler() {
-        return handler;
-    }
     
     @Override
     public boolean isLeaf(){ return false; }
+
 
 }
