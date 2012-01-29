@@ -34,8 +34,6 @@ public class CommonNode extends DefaultMutableTreeNode
 
     protected void repaintChangeAndStructure(){
         setUserObject(this.toString());
-        if (isLeaf())
-            System.out.println("error: leaf cannot change structure");
         SwingUtilities.invokeLater(changeAndStruct);
     }
 

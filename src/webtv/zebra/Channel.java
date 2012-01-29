@@ -130,7 +130,7 @@ public class Channel extends SiteNode
             add(new Channel(model, "Populiariausi", link, cookie,
                     "http://www.zebra.lt/lt/video/kanalai//populiariausi"));
             add(new Channel(model, "Geriausi", link, cookie,
-                    "http://www.zebra.lt/lt/video/kanalai//geriausi"));            
+                    "http://www.zebra.lt/lt/video/kanalai//geriausi"));
         }
     }
     

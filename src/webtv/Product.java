@@ -42,8 +42,12 @@ public abstract class Product extends SiteNode
         this.tool = tool;
         tool.setProgressListener(plistener);
         checkFileState();
+        setAllowsChildren(false);
     }
 
+    @Override
+    public boolean isLeaf() { return true; }
+    
     Process downloader = null;
 
     ProgressListener plistener = new ProgressListener() {
