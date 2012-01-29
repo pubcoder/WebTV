@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package webtv;
 
 import javax.swing.SwingUtilities;
@@ -10,7 +5,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
 /**
- *
+ * Common features for all nodes: refreshing and restructuring upon changes.
  * @author marius
  */
 public class CommonNode extends DefaultMutableTreeNode
@@ -39,6 +34,8 @@ public class CommonNode extends DefaultMutableTreeNode
 
     protected void repaintChangeAndStructure(){
         setUserObject(this.toString());
+        if (isLeaf())
+            System.out.println("error: leaf cannot change structure");
         SwingUtilities.invokeLater(changeAndStruct);
     }
 

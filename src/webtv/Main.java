@@ -1,26 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package webtv;
 
-import webtv.tv3play.Program;
-import webtv.tv3webtv.SiteMapNode;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -32,19 +17,14 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTree;
+import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.ExpandVetoException;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
-import webtv.tv3play.MainPage;
+import javax.swing.tree.*;
+import webtv.tv3play.Program;
+import webtv.tv3play.TV3Play;
+import webtv.tv3webtv.SiteMapNode;
+import webtv.zebra.ZebraList;
 
 /**
  *
@@ -55,7 +35,7 @@ public class Main extends JFrame implements TreeWillExpandListener,
 {
     static final int MAX_DOWNLOADS = 3;
     JTree tree;
-    SiteNode root;
+    DefaultMutableTreeNode root;
     FileLinkList files;
     DefaultTreeModel model;
     JPopupMenu nodeMenu;
@@ -65,18 +45,19 @@ public class Main extends JFrame implements TreeWillExpandListener,
     static final String pngs[] = {"tv3-16.png","tv3-24.png","tv3-32.png","tv3-48.png","tv3-64.png" };
     public Main(){
         model = new DefaultTreeModel(null);
-        root = new MainPage(model);
+        root = new DefaultMutableTreeNode("WebTV ;-)");
         model.setRoot(root);
-        root.add(new SiteMapNode(model, "TV3 Lithuania", "0"));        
+        root.add(new TV3Play(model));
+        root.add(new ZebraList(model));
+        root.add(new SiteMapNode(model, "TV3 Lithuania", "0"));
+        root.add(files = new FileLinkList(model));        
         tree = new JTree(model);
-        root.add(files = new FileLinkList(model));
-        root.refresh();
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setEditable(false);
-        tree.addTreeWillExpandListener(this);
+        tree.addTreeWillExpandListener(Main.this);
         tree.addMouseListener(new PopupListener());
         //tree.getModel().valueForPathChanged(arg0, tree)
-        tree.setShowsRootHandles(true);
+        //tree.setShowsRootHandles(true);
         tree.addKeyListener(new KeyListener(){
             public void keyTyped(KeyEvent e) {
                 TreePath path = tree.getSelectionPath();
@@ -147,13 +128,13 @@ public class Main extends JFrame implements TreeWillExpandListener,
         });
     }
 
-    public void finished(Product p) {
+    public synchronized void finished(Product p) {
         boolean c = active.remove(p);
         if (!c) {
             System.err.println("Completed download ("+p+") but it was not among active!");
         }
         p.removeDownloadListener(this);
-        if (active.isEmpty()) {            
+        if (active.size()<MAX_DOWNLOADS) {            
             if (!queue.isEmpty()) {
                 //System.out.println("Starting new download");
                 p = queue.poll();
@@ -310,7 +291,7 @@ public class Main extends JFrame implements TreeWillExpandListener,
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        new Main();
+        Main main = new Main();
     }
 
     public void treeWillExpand(TreeExpansionEvent e) throws ExpandVetoException {

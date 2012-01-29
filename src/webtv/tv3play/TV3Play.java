@@ -1,15 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package webtv.tv3play;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import webtv.SiteNode;
 
@@ -17,10 +10,10 @@ import webtv.SiteNode;
  *
  * @author marius
  */
-public class MainPage extends SiteNode 
+public class TV3Play extends SiteNode 
 {
-    public static String url = "http://www.tv3play.lt/categories";
-    public static String referer = "http://www.tv3play.lt/";
+    public static final String url = "http://www.tv3play.lt/categories";
+    public static final String referer = "http://www.tv3play.lt/";
     private TreeSet<String> ids = new TreeSet<String>();
 
     @Override
@@ -28,15 +21,19 @@ public class MainPage extends SiteNode
 
     @Override
     protected String getReferer() { return referer; }
+    
+    @Override
+    public boolean isLeaf(){ return false; }    
+    
 
     @Override
-    protected void parseDoc(InputStream is) throws IOException
+    protected void parseDoc(InputStream is, int length) throws IOException
     {
         StringBuilder doc = new StringBuilder();
-        int size = 4096;
-        byte data[] = new byte[size];
+        if (length<0) length = 4096;
+        byte data[] = new byte[length];
         while (true){
-            int got = is.read(data, 0, size);
+            int got = is.read(data, 0, length);
             if (got < 0) break;
             doc.append(new String(data, 0, got));
         }
@@ -68,7 +65,7 @@ public class MainPage extends SiteNode
         }
     }
     
-    public MainPage(DefaultTreeModel model)
+    public TV3Play(DefaultTreeModel model)
     {
         super(model, "TV3Play");
     }

@@ -1,40 +1,28 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package webtv;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
-import org.xml.sax.Attributes;
-import org.xml.sax.helpers.DefaultHandler;
-import webtv.tv3webtv.SiteMapNode;
 
 /**
  *
  * @author marius
  */
-public class Product extends XMLSiteNode
+public abstract class Product extends SiteNode
 {
-    public String filename;
-    protected String rtmp, titleField=null;
-    public long size;
-    protected final String id;
-    private final String url;
+    protected String path;
+    protected DownloadTool tool;
+    protected long size;
     
     public enum State { Unknown, Loading, Downloading, Incomplete, Ready, Exists, Deleted, Scheduled };
     protected State state = State.Unknown;
     boolean seen = false;
 
     protected final void checkFileState() {
-        File f = new File(filename);
+        File f = new File(path);
         if (f.exists()) {
             if (size > 0) {
                 if (size > f.length()) {
@@ -48,187 +36,46 @@ public class Product extends XMLSiteNode
         }
     }
 
-    public Product(DefaultTreeModel model, String title, String id){
+    public Product(DefaultTreeModel model, String title, DownloadTool tool){
         super(model, title);
-        this.handler = myhandler;
-        this.id = id;
-        this.url = "http://viastream.viasat.tv/products/"+id; 
-        filename = title+".flv";
+        path = "wget/"+title+".flv";
+        this.tool = tool;
+        tool.setProgressListener(plistener);
         checkFileState();
-    }
-
-    @Override
-    protected String getURL() { return url; }
-    @Override
-    protected String getReferer() { return SiteMapNode.referer; }
-    
-    DefaultHandler myhandler = new DefaultHandler(){
-    int field = 0;
-
-    @Override
-    public void characters(char[] ch, int start, int length)
-    {
-        switch (field) {
-            case 5: rtmp = new String(ch, start, length); break;
-            case 10: titleField = new String(ch, start, length); repaintChange(); break;
-        }
-        //System.out.println(new String(ch, start, length));
-    }
-
-
-    @Override
-    public void startElement(String uri, String localName, String qName, Attributes attrs)
-    {
-        if ("Products".equals(qName)) {
-            field = 1;
-        } else if (field==1 && "Product".equals(qName)) {
-            field = 2;
-        } else if (field==2 && "Title".equals(qName)) {
-            field = 10;
-        } else if (field==2 && "Videos".equals(qName)) {
-            field = 3;
-        } else if (field==3 && "Video".equals(qName)) {
-            field = 4;
-        } else if (field==4 && "Url".equals(qName)) {
-            field = 5;
-        }
-        //System.out.println("<"+qName+">");
-    }
-
-    @Override
-    public void endElement(String uri, String localName, String qName)
-    {
-        if (field==10 && "Title".equals(qName)) {
-            field = 2;
-        } else if (field==5 && "Url".equals(qName)) {
-            field = 4;
-        } else if (field==4 && "Video".equals(qName)) {
-            field = 3;
-        } else if (field==3 && "Videos".equals(qName)) {
-            field = 2;
-        } else if (field==2 && "Product".equals(qName)) {
-            field = 1;
-        } else if (field==1 && "Products".equals(qName)) {
-            field = 0;
-        }
-        //System.out.println("</"+qName+">");
-    }
-    };
-
-    boolean downloading = false;
-
-    protected String[] getDownloadCommand(){
-        /*
-         * How to get swfsize and swfhash:
-         * download the player:
-         * wget "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf"
-         * "unzip" it:
-         * flasm -x syndicated.swf
-         * check the unzipped size:
-         * ls -l syndicated.swf
-         * compute the SHA256:
-         * openssl sha -sha256 -hmac "Genuine Adobe Flash Player 001" syndicated.swf
-         */
-        String downCmd[] = { "/usr/bin/rtmpdump", "--swfhash",
-            "b8880becde3d77d6c11f9ef453053617667eaf4890f1f8748035f4003d70eeda",
-            "--swfsize", "28811032", "-r", rtmp, "-o", filename };
-        String resumeCmd[] = { "/usr/bin/rtmpdump", "--swfhash",
-            "b8880becde3d77d6c11f9ef453053617667eaf4890f1f8748035f4003d70eeda",
-            "--swfsize", "28811032", "--resume", "-r", rtmp, "-o", filename };
-        return downCmd;/*
-        if (State.Unknown.equals(state) || State.Loading.equals(state)) return downCmd;
-        else return resumeCmd;*/
     }
 
     Process downloader = null;
 
-    public void download() {
-        if (downloading) return;
-        downloading = true;
-        state = State.Downloading;
-        new Thread(new Runnable(){
-            public void run() {
-                //System.out.println("Loading product");
-                reload();
-                try {
-                    if (rtmp == null || rtmp.length() == 0) {
-                        throw new Exception("No video URL");
-                    }
-                    status = "downloading";
-                    repaintChange();
-                    String cmd[] = getDownloadCommand();
-                    //System.out.println("Executing download");
-                    System.out.println("Downloading: " + rtmp);
-                    downloader = Runtime.getRuntime().exec(cmd);
-                    BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(downloader.getErrorStream()));
-                    int i = -1;
-                    String line = reader.readLine();
-                    while (line != null) {
-                        line = line.trim();
-                        if (line.length() > 0) {
-                            status = line;
-                            // System.out.println(status);
-                            repaintChange();
-                        }
-                        i = line.indexOf("filesize");
-                        line = reader.readLine();
-                    }
-                    if (i >= 0) {
-                        size = Integer.parseInt(line.substring(i + 8).trim());
-                    }
-                    while (line != null) {
-                        line = line.trim();
-                        if (line.length() > 0) {
-                            status = line;
-                            //System.out.println(status);
-                            repaintChange();
-                        }
-                        line = reader.readLine();
-                    }
-                    /*                    p.getInputStream().close();
-                    p.getOutputStream().close();
-                    p.getErrorStream().close();*/
-                    i = downloader.waitFor();
-                    downloader = null;
-                    if (i != 0) {
-                        status = status + " {" + i + "}";
-                        state = State.Incomplete;
-                    } else {
-                        status = null;
-                        state = State.Ready;
-                    }
-                    //System.out.println("Finished download");
-                } catch (InterruptedException ex) {
-                    checkFileState();
-                    status = ex.getMessage();
-                    //ex.printStackTrace(System.err);
-                } catch (IOException ex) {
-                    if (state != State.Deleted) {
-                        checkFileState();
-                        status = ex.getMessage();
-                        ex.printStackTrace(System.err);
-                    } else status = "{killed}";
-                } catch (Exception ex) {
-                    checkFileState();
-                    status = ex.getMessage();
-                    ex.printStackTrace(System.err);
-                }
-                downloading = false;
-                repaintChange();
-                for (DownloadListener l: listeners)
-                    l.finished(Product.this);
-            }
-        }, "Download").start();
-    }
-
-    public void cancelDownload(){
-        if (downloader == null){
-            downloader.destroy();
-            downloader = null;
+    ProgressListener plistener = new ProgressListener() {
+        public void started(){ 
+            status = "downloading";
+            state = State.Downloading;
+            repaintChange();
         }
-    }
-
+        public void updateSize(int size){
+            Product.this.size = size;
+        }
+        public void update(String status){
+            Product.this.status = status;
+            repaintChange();
+        }
+        public void incomplete(String status){
+            Product.this.status = status;
+            state = State.Incomplete;
+            repaintChange();            
+        }
+        public void finished(){
+            status = null;
+            state = State.Ready;
+            for (DownloadListener l: listeners)
+                l.finished(Product.this);            
+            repaintChange();            
+        }
+    };
+    
+    public abstract void download();
+    public void cancelDownload(){ tool.cancelDownload(); }
+    
     @Override
     protected void reload(){
         State last = state;
@@ -242,9 +89,12 @@ public class Product extends XMLSiteNode
 
     public void play() {
         if (State.Unknown.equals(state) || State.Loading.equals(state)) return;
-        String cmd[] = {"/usr/bin/totem", "--enqueue", filename};
+        File f = new File(path);
+        String cmd[] = {"/usr/bin/totem", "--enqueue", f.getAbsolutePath()};
         try {
-            Runtime.getRuntime().exec(cmd);
+            Process p = Runtime.getRuntime().exec(cmd);
+            p.getErrorStream().close();
+            p.getOutputStream().close();
             seen = true;
             this.repaintChange();
         } catch (IOException ex) {
@@ -253,7 +103,7 @@ public class Product extends XMLSiteNode
     }
 
     public void delete(){
-        new File(filename).delete();
+        new File(path).delete();
         state = State.Deleted;
         if (downloader != null) {
             downloader.destroy();

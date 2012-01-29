@@ -12,13 +12,13 @@ import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 import webtv.SiteNode;
-import webtv.XMLSiteNode;
+import webtv.XMLParser;
 
 /**
  *
  * @author marius
  */
-public class SiteMapNode extends XMLSiteNode {
+public class SiteMapNode extends SiteNode {
     public static final String url = "http://viastream.viasat.tv//siteMapData/lt/2lt/";
     public static final String referer = "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf";
     private final String id;
@@ -26,7 +26,6 @@ public class SiteMapNode extends XMLSiteNode {
     
     public SiteMapNode(DefaultTreeModel model, String title, String id) {
         super(model, title);
-        handler = myhandler;
         this.id = id;
         setAllowsChildren(true);
     }
@@ -62,5 +61,11 @@ public class SiteMapNode extends XMLSiteNode {
 
     @Override
     public boolean isLeaf(){ return false; }
+
+    XMLParser parser = new XMLParser();
+    @Override
+    protected void parseDoc(InputStream is, int length) throws IOException, Exception {
+        parser.parse(is, myhandler);
+    }
 
 }

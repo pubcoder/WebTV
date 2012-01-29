@@ -1,17 +1,9 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package webtv;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +13,8 @@ import javax.swing.tree.DefaultTreeModel;
  *
  * @author marius
  */
-public class WGetNode extends CommonNode {
+public class WGetNode extends CommonNode 
+{
     URI addr;
     String title, filename, scheme;
     String status = null;
@@ -29,7 +22,24 @@ public class WGetNode extends CommonNode {
     boolean downloading = false;
     Process downloader = null;
 
-
+    public WGetNode(DefaultTreeModel model, String title, String url)
+    {
+        super(model);
+        try {
+            addr = new URI(url);
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        filename = "wget/"+title+".flv";
+        this.title = title;
+        scheme = addr.getScheme();
+        File f;
+        if ("file".equals(scheme)) f = new File(addr);
+        else f = new File(filename);
+        if (f.exists()) { status = "[exists]"; ready = true; }
+        setUserObject(title);
+    }
+    
     public WGetNode(DefaultTreeModel model, URI uri)
     {
         super(model);
@@ -146,10 +156,6 @@ public class WGetNode extends CommonNode {
                 }
                 downloading = false;
                 repaintChange();
-                /*
-                for (DownloadListener l: listeners)
-                    l.finished(Product.this);
-                 */
             }
         }).start();
     }

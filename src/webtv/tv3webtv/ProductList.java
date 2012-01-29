@@ -5,19 +5,20 @@
 
 package webtv.tv3webtv;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
-import webtv.Product;
 import webtv.SiteNode;
-import webtv.XMLSiteNode;
+import webtv.XMLParser;
 
 /**
  *
  * @author marius
  */
-public class ProductList extends XMLSiteNode {
+public class ProductList extends SiteNode {
     public final String url;
     public static final String referer = SiteMapNode.referer;
     private final String id;
@@ -25,7 +26,6 @@ public class ProductList extends XMLSiteNode {
 
     public ProductList(DefaultTreeModel model, String title, String id){
         super(model, title);
-        this.handler = myhandler;
         this.id = id;
         this.url = "http://viastream.viasat.tv/Products/Category/"+id;
         setAllowsChildren(true);
@@ -74,7 +74,7 @@ public class ProductList extends XMLSiteNode {
             } else if (field == 2 && "ProductId".equals(qName)) {
                 field = 1;
             } else if ("Product".equals(qName) && !ids.contains(prodId)) {
-                SiteNode node = new Product(model, prodTitle, prodId);
+                SiteNode node = new Show(model, prodTitle, "http://viastream.viasat.tv/products/"+prodId, url);
                 if (refreshing) ProductList.this.insert(node, 0);
                 else add(node);
                 ids.add(prodId);
@@ -85,6 +85,15 @@ public class ProductList extends XMLSiteNode {
     
     @Override
     public boolean isLeaf(){ return false; }
+
+    
+    XMLParser parser = new XMLParser();
+    @Override
+    protected void parseDoc(InputStream is, int length) 
+            throws IOException, Exception 
+    {
+        parser.parse(is, myhandler);
+    }
 
 
 }

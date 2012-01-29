@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package webtv.tv3play;
 
 import java.io.IOException;
@@ -28,18 +24,19 @@ public class ProgramList extends SiteNode
     @Override
     protected String getURL() { return url; }
     @Override
-    protected String getReferer() { return MainPage.url; }
+    protected String getReferer() { return TV3Play.url; }
     @Override
     public boolean isLeaf(){ return false; }    
     
-
     @Override
-    protected void parseDoc(InputStream is) throws IOException, Exception {
+    protected void parseDoc(InputStream is, int length) 
+            throws IOException, Exception 
+    {
         StringBuilder doc = new StringBuilder();
-        int size = 4096;
-        byte data[] = new byte[size];
+        if (length<0) length = 4096;
+        byte data[] = new byte[length];
         while (true){
-            int got = is.read(data, 0, size);
+            int got = is.read(data, 0, length);
             if (got<0) break;
             doc.append(new String(data, 0, got));
         }

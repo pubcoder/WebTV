@@ -1,14 +1,9 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package webtv;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -19,14 +14,13 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author marius
  */
-public abstract class XMLSiteNode extends SiteNode 
+public class XMLParser
 {
     protected static SAXParserFactory factory;
     protected SAXParser parser;
-    protected DefaultHandler handler;
 
-    public XMLSiteNode(DefaultTreeModel model, String title){
-        super(model, title);
+    public XMLParser()
+    {
         if (factory==null) factory = SAXParserFactory.newInstance();
         try {
             parser = factory.newSAXParser();
@@ -37,8 +31,9 @@ public abstract class XMLSiteNode extends SiteNode
         }        
     }
 
-    @Override
-    protected void parseDoc(InputStream is) throws IOException, Exception {
+    public void parse(InputStream is, DefaultHandler handler) 
+            throws IOException, Exception 
+    {
         parser.parse(is, handler);
     }
         

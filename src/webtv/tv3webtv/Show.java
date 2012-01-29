@@ -1,6 +1,9 @@
-package webtv.tv3play;
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package webtv.tv3webtv;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.swing.tree.DefaultTreeModel;
@@ -14,72 +17,26 @@ import webtv.XMLParser;
  *
  * @author marius
  */
-public class Program extends Product
+public class Show extends Product 
 {
-    String id, url;
-    String refererRnd, swfRnd, page;
- 
-    boolean ready = false;
-
-    public Program(DefaultTreeModel model, String id)
-    {
-        super(model, "TV3Play-"+id, new RTMPTool());
-        this.id = id;
-        this.url = "http://viastream.viasat.tv/products/"+id;
-        path = "wget/"+title+".flv";
-        checkFileState();
-
-        page = "http://www.tv3play.lt/play/"+id+"/";
-        long rnd = System.currentTimeMillis()/1000;
-        refererRnd = "http://flvplayer.viastream.viasat.tv/flvplayer/play/swf/player.swf?rnd="+rnd;
-        swfRnd = "http://flvplayer.viastream.viasat.tv/play/swf/player110516.swf?rnd="+rnd;
-        setUserObject(id);
+    String url, referer, link;    
+        
+    public Show(DefaultTreeModel model, String title, String url, String referer){
+        super(model, title, new RTMPTool());
+        this.url = url;
+        this.referer = referer;
         refresh();
     }
-
-    public Program(DefaultTreeModel model, String id, String title)
-    {
-        super(model, title, new RTMPTool());
-        this.id = id;
-        this.url = "http://viastream.viasat.tv/PlayProduct/"+id;
-        titleField = title;
-        path = "wget/"+this.title+".flv";
-        checkFileState();
-
-        page = "http://www.tv3play.lt/play/"+id+"/";
-        long rnd = System.currentTimeMillis()/1000;
-        refererRnd = "http://flvplayer.viastream.viasat.tv/flvplayer/play/swf/player.swf?rnd="+rnd;
-        swfRnd = "http://flvplayer.viastream.viasat.tv/play/swf/player110516.swf?rnd="+rnd;
-        setUserObject(title);
-        refresh();        
-    }
-    
     
     @Override
-    protected String getURL() { return url; }
-    @Override
-    protected String getReferer() { return (refererRnd); }
-    @Override
-    public void download() {
-        ((RTMPTool)tool).download(link, path, swfRnd, page, 
-                "rtmp://video.tv3.lt/tv3/mtg", "tv3/mtg");
+    public void download() { 
+        ((RTMPTool)tool).download(link, path, 
+                "b8880becde3d77d6c11f9ef453053617667eaf4890f1f8748035f4003d70eeda", 
+                "28811032"); 
     }
+
     @Override
     public void cancelDownload() { tool.cancelDownload(); }
-    
-    @Override
-    protected void reload(){
-        if (titleField==null) {
-            super.reload();
-            title = titleField+" ("+id+")";
-            String newFilename = "wget/"+title+".flv";
-            new File(path).renameTo(new File(newFilename));
-            path = newFilename;
-            repaintChange();
-        } else {
-            super.reload();
-        }
-    }
 
     XMLParser parser = new XMLParser();
     @Override
@@ -89,7 +46,13 @@ public class Program extends Product
         parser.parse(is, myhandler);
     }
 
-    protected String link, titleField=null;
+    @Override
+    protected String getURL() { return url; }
+
+    @Override
+    protected String getReferer() { return referer; }
+
+    protected String rtmp, titleField=null;
     DefaultHandler myhandler = new DefaultHandler() {
         int field = 0;
         @Override
