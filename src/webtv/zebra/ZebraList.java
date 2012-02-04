@@ -19,55 +19,34 @@ public class ZebraList extends SiteNode
     private TreeSet<String> ids = new TreeSet<String>();
     
     public ZebraList(DefaultTreeModel model){
-        super(model, "Zebra");
+        super(model, "Zebra.lt");
     }   
-    @Override
-    protected String getURL() { return url; }
-    @Override
-    protected String getReferer() { return ref; }
     @Override
     public boolean isLeaf(){ return false; }        
     
-    @Override
-    protected void parseDoc(InputStream is, int length) 
-            throws IOException, Exception 
-    {
-        StringBuilder doc = new StringBuilder();
-        if (length<0) length = 4096;
-        byte data[] = new byte[length];
-        while (true){
-            int got = is.read(data, 0, length);
-            if (got<0) break;
-            doc.append(new String(data, 0, got));
-        }
-        findChannels(doc);
-    }
-
-    static final String channels = "<div class=\"arrow arrow_selected\"></div>Kanalai</a>";
     static final String chanPref = "/lt/video/kanalas/";
-    static final String chanBegin = " href=\""+chanPref;
+    static final String chanBegin = " href=\"" + chanPref;
     static final String chanFinish = "\">";
-    static final String nameFinish = "</a>";
-    
-    private void findChannels(StringBuilder doc) {
-        
-        int i = doc.indexOf(channels);
+
+    @Override
+    protected void doReload() 
+    {        
+        StringBuilder d = web.getDoc(url, ref);
+        if (d == null) { status = web.getStatus(); return ; }
+        int i = web.find("<div class=\"arrow arrow_selected\"></div>Kanalai</a>");
         if (i<0) return;
-        i = doc.indexOf(chanBegin, i+channels.length());
-        while (i>0) {
-            int chanStart = i+chanBegin.length();
-            int chanEnd = doc.indexOf(chanFinish, chanStart);
-            if (chanEnd<0) break;
-            String link = site+chanPref+doc.substring(chanStart, chanEnd);
-            int nameStart = chanEnd+chanFinish.length();
-            int nameEnd = doc.indexOf(nameFinish, nameStart);
-            if (nameEnd<0) break;
-            String name = doc.substring(nameStart, nameEnd);
+        String link = web.findNext(chanBegin, chanFinish);
+        while (link != null) {
+            link = site+chanPref+link;
+            web.skipLastPostfix();
+            String name = web.findNext("</a>");
             if (!ids.contains(link)) {
-                add(new Channel(model, name, link, cookie));
+                add(new Channel(model, name, link, web.getCookie()));
                 ids.add(link);
             }
-            i = doc.indexOf(chanBegin, nameEnd+nameFinish.length());
+            web.skipLastPostfix();
+            link = web.findNext(chanBegin, chanFinish);
         }
-    }    
+        status = null;
+    }
 }

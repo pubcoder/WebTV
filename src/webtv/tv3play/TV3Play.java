@@ -1,7 +1,5 @@
 package webtv.tv3play;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
 import webtv.SiteNode;
@@ -13,49 +11,26 @@ import webtv.SiteNode;
 public class TV3Play extends SiteNode 
 {
     public static final String url = "http://www.tv3play.lt/categories";
-    public static final String referer = "http://www.tv3play.lt/";
+    public static final String ref = "http://www.tv3play.lt/";
     private TreeSet<String> ids = new TreeSet<String>();
-
-    @Override
-    protected String getURL() { return url; }
-
-    @Override
-    protected String getReferer() { return referer; }
-    
+  
     @Override
     public boolean isLeaf(){ return false; }    
     
-
     @Override
-    protected void parseDoc(InputStream is, int length) throws IOException
+    protected void doReload()
     {
-        StringBuilder doc = new StringBuilder();
-        if (length<0) length = 4096;
-        byte data[] = new byte[length];
-        while (true){
-            int got = is.read(data, 0, length);
-            if (got < 0) break;
-            doc.append(new String(data, 0, got));
-        }
-        findCategories(doc);
-    }
-    
-    protected void findCategories(StringBuilder doc)
-    {
+        StringBuilder doc = web.getDoc(url, ref);
+        if (doc == null) {status = web.getStatus(); return ; }
         final String h2id = "<h2 id=\"";
         final String tagend = "\">";
         final String h2end = "</h2>";
-        int i = doc.indexOf(h2id);
+        int i = web.find(h2id);
         while (i>=0) {
-            i += h2id.length();
-            int nameStart = doc.indexOf(tagend, i);
-            if (nameStart<0) break;
-            nameStart += tagend.length();
-            int nameEnd = doc.indexOf(h2end, nameStart);
-            if (nameEnd<0) break;
-            String cat = doc.substring(nameStart, nameEnd);
-            int catStart = nameEnd + h2end.length();
-            i = doc.indexOf(h2id, catStart);
+            web.skipLastPostfix();
+            String cat = web.findNext(tagend, h2end);
+            int catStart = web.skipLastPostfix();
+            i = web.find(h2id);
             int next = i;
             if (next<0) next = doc.length();
             if (!ids.contains(cat)) {
@@ -63,6 +38,7 @@ public class TV3Play extends SiteNode
                 ids.add(cat);
             }
         }
+        status = null;
     }
     
     public TV3Play(DefaultTreeModel model)

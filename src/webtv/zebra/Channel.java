@@ -24,76 +24,36 @@ public class Channel extends SiteNode
     public Channel(DefaultTreeModel model, String title, String link, String cookie) {
         super(model, title);
         this.link = link;
-        this.cookie = cookie;
+        web.setCookie(cookie);
     }
 
     public Channel(DefaultTreeModel model, String title, String link, String cookie, String url) {
         super(model, title);
         this.url = url;
         this.link = link;
-        this.cookie = cookie;
+        web.setCookie(cookie);
     }    
     
-    @Override
-    protected String getURL() { return url; }
-    @Override
-    protected String getReferer() { return link; }
-    @Override
-    protected void prepare(HttpURLConnection con) { 
-        con.addRequestProperty("X-Requested-With", "XMLHttpRequest");
-        if (cookie != null)
-            con.addRequestProperty("Cookie", cookie);
-    }
     @Override
     public boolean isLeaf(){ return false; }    
 
     @Override
-    protected void reload() {
-        if (busy) return;
-        busy = true;
-        status = "loading";
-        repaintChangeAndStructure();
+    protected void doReload() {
         try {
-            //System.out.println("Sending request");
-            HttpURLConnection con = (HttpURLConnection) new URL(link).openConnection();
-            con.setRequestMethod("GET");
-            con.setRequestProperty("User-Agent", agent);
-            con.setRequestProperty("Referer", ZebraList.site);
-            con.setDoInput(true);
-            con.setDoOutput(true);            
-            con.connect();
-            InputStream is = con.getInputStream();
-            cookie = con.getHeaderField("Set-Cookie");
-            int len = con.getContentLength();
+            web.setRequestedWith(null);
+            InputStream is = web.getStream(link, ZebraList.site);
+            int len = web.getContentLength();
             if (len<0) len = Integer.MAX_VALUE;
             is.skip(len);
             is.close();
+            web.setRequestedWith("XMLHttpRequest");
+            StringBuilder doc = web.getDoc(url, link);
+            findShows(doc);
+            status = null;
         } catch (IOException ex) {
             status = ex.getMessage();
             Logger.getLogger(Channel.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (Exception ex) {
-            status = ex.getMessage();
-            Logger.getLogger(Channel.class.getName()).log(Level.SEVERE, null, ex);
         }
-        busy = false;
-        super.reload();
-    }
-    
-    
-
-    @Override
-    protected void parseDoc(InputStream is, int length) 
-            throws IOException, Exception 
-    {
-        StringBuilder doc = new StringBuilder();
-        if (length<0) length = 4096;
-        byte data[] = new byte[length];
-        while (true){
-            int got = is.read(data, 0, length);
-            if (got<0) break;
-            doc.append(new String(data, 0, got));
-        }
-        findShows(doc);
     }
 
     boolean extra = false;
@@ -120,16 +80,16 @@ public class Channel extends SiteNode
             if (nameEnd<0) break;
             String name = doc.substring(nameStart, nameEnd);
             if (!ids.contains(page)) {
-                add(new Show(model, name+" "+duration, page, cookie));
+                add(new Show(model, name+" "+duration, page, web.getCookie()));
                 ids.add(page);
             }
             i = doc.indexOf(durBegin, nameEnd+nameFinish.length());
         }
         if (defaultUrl.equals(url) && !extra) {
             extra = true;
-            add(new Channel(model, "Populiariausi", link, cookie,
+            add(new Channel(model, "Populiariausi", link, web.getCookie(),
                     "http://www.zebra.lt/lt/video/kanalai//populiariausi"));
-            add(new Channel(model, "Geriausi", link, cookie,
+            add(new Channel(model, "Geriausi", link, web.getCookie(),
                     "http://www.zebra.lt/lt/video/kanalai//geriausi"));
         }
     }

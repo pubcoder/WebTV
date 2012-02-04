@@ -8,6 +8,8 @@ package webtv.tv3webtv;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
@@ -20,7 +22,6 @@ import webtv.XMLParser;
  */
 public class ProductList extends SiteNode {
     public final String url;
-    public static final String referer = SiteMapNode.referer;
     private final String id;
     protected TreeSet<String> ids = new TreeSet<String>();    
 
@@ -32,10 +33,26 @@ public class ProductList extends SiteNode {
     }
 
     @Override
-    protected String getURL() { return url; }
-    @Override
-    protected String getReferer() { return referer; }
+    public boolean isLeaf(){ return false; }
 
+    XMLParser parser = new XMLParser();
+
+    @Override
+    protected void doReload() {
+        InputStream is = web.getStream(url, SiteMapNode.ref);
+        if (is == null) { status = web.getStatus(); return; }
+        try {
+            parser.parse(is, myhandler);
+            status = null;
+        } catch (IOException ex) {
+            status = ex.getMessage();
+            Logger.getLogger(ProductList.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            status = ex.getMessage();            
+            Logger.getLogger(ProductList.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }    
+    
     DefaultHandler myhandler = new DefaultHandler() {
 
         String prodId;
@@ -82,18 +99,4 @@ public class ProductList extends SiteNode {
             }
         }
     };
-    
-    @Override
-    public boolean isLeaf(){ return false; }
-
-    
-    XMLParser parser = new XMLParser();
-    @Override
-    protected void parseDoc(InputStream is, int length) 
-            throws IOException, Exception 
-    {
-        parser.parse(is, myhandler);
-    }
-
-
 }

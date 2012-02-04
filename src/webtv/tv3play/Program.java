@@ -3,6 +3,8 @@ package webtv.tv3play;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
@@ -53,12 +55,7 @@ public class Program extends Product
         setUserObject(title);
         refresh();        
     }
-    
-    
-    @Override
-    protected String getURL() { return url; }
-    @Override
-    protected String getReferer() { return (refererRnd); }
+        
     @Override
     public void download() {
         ((RTMPTool)tool).download(link, path, swfRnd, page, 
@@ -66,29 +63,31 @@ public class Program extends Product
     }
     @Override
     public void cancelDownload() { tool.cancelDownload(); }
-    
-    @Override
-    protected void reload(){
-        if (titleField==null) {
-            super.reload();
-            title = titleField+" ("+id+")";
-            String newFilename = "wget/"+title+".flv";
-            new File(path).renameTo(new File(newFilename));
-            path = newFilename;
-            repaintChange();
-        } else {
-            super.reload();
-        }
-    }
 
     XMLParser parser = new XMLParser();
+    
     @Override
-    protected void parseDoc(InputStream is, int length) 
-            throws IOException, Exception 
-    {
-        parser.parse(is, myhandler);
+    protected void doReload() {
+        InputStream is = web.getStream(url, refererRnd);
+        if (is == null) { status = web.getStatus(); return; }
+        try {
+            parser.parse(is, myhandler);
+            status = null;
+        } catch (IOException ex) {
+            status = ex.getMessage();
+            Logger.getLogger(Program.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            status = ex.getMessage();
+            Logger.getLogger(Program.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (titleField==null) {            
+            title = titleField+" ("+id+")";
+            String newFilename = title+".flv";
+            new File(path).renameTo(new File(newFilename));
+            path = newFilename;
+        }
     }
-
+    
     protected String link, titleField=null;
     DefaultHandler myhandler = new DefaultHandler() {
         int field = 0;
@@ -140,5 +139,5 @@ public class Program extends Product
             }
             //System.out.println("</"+qName+">");
         }
-    };    
+    };
 }

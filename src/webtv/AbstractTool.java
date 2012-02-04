@@ -4,6 +4,9 @@
  */
 package webtv;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author marius
@@ -36,7 +39,8 @@ public class AbstractTool implements DownloadTool, Runnable
     }
 
     public synchronized void cancelDownload(){
-        if (downloader == null){
+        downloading = false;
+        if (downloader != null){
             downloader.destroy();
             downloader = null;
         }

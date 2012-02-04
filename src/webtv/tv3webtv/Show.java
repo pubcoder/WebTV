@@ -6,6 +6,8 @@ package webtv.tv3webtv;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
@@ -19,12 +21,12 @@ import webtv.XMLParser;
  */
 public class Show extends Product 
 {
-    String url, referer, link;    
+    String url, ref, link;
         
     public Show(DefaultTreeModel model, String title, String url, String referer){
         super(model, title, new RTMPTool());
         this.url = url;
-        this.referer = referer;
+        this.ref = referer;
         refresh();
     }
     
@@ -37,21 +39,25 @@ public class Show extends Product
 
     @Override
     public void cancelDownload() { tool.cancelDownload(); }
-
+    
     XMLParser parser = new XMLParser();
+
     @Override
-    protected void parseDoc(InputStream is, int length) 
-            throws IOException, Exception 
-    {
-        parser.parse(is, myhandler);
+    protected void doReload() {
+        InputStream is = web.getStream(url, ref);
+        if (is == null) { status = web.getStatus(); return ; }
+        try {
+            parser.parse(is, myhandler);
+            status = null;
+        } catch (IOException ex) {
+            status = ex.getMessage();
+            Logger.getLogger(Show.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            status = ex.getMessage();
+            Logger.getLogger(Show.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
-
-    @Override
-    protected String getURL() { return url; }
-
-    @Override
-    protected String getReferer() { return referer; }
-
+    
     protected String rtmp, titleField=null;
     DefaultHandler myhandler = new DefaultHandler() {
         int field = 0;
@@ -103,5 +109,6 @@ public class Show extends Product
             }
             //System.out.println("</"+qName+">");
         }
-    };    
+    };
+
 }

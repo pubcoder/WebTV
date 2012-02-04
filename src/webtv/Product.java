@@ -48,8 +48,6 @@ public abstract class Product extends SiteNode
     @Override
     public boolean isLeaf() { return true; }
     
-    Process downloader = null;
-
     ProgressListener plistener = new ProgressListener() {
         public void started(){ 
             status = "downloading";
@@ -109,10 +107,7 @@ public abstract class Product extends SiteNode
     public void delete(){
         new File(path).delete();
         state = State.Deleted;
-        if (downloader != null) {
-            downloader.destroy();
-            downloader = null;
-        }
+        cancelDownload();
         repaintChange();
     }
     public void setScheduled(boolean b) {

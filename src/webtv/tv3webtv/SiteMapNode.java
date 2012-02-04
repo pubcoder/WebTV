@@ -8,6 +8,8 @@ package webtv.tv3webtv;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
@@ -19,13 +21,14 @@ import webtv.XMLParser;
  * @author marius
  */
 public class SiteMapNode extends SiteNode {
-    public static final String url = "http://viastream.viasat.tv//siteMapData/lt/2lt/";
-    public static final String referer = "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf";
-    private final String id;
+    public static final String urlPre = "http://viastream.viasat.tv//siteMapData/lt/2lt/";
+    public static final String ref = "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf";
+    private final String url, id;
     private TreeSet<String> ids = new TreeSet<String>();
     
     public SiteMapNode(DefaultTreeModel model, String title, String id) {
         super(model, title);
+        url = urlPre+id;
         this.id = id;
         setAllowsChildren(true);
     }
@@ -54,18 +57,24 @@ public class SiteMapNode extends SiteNode {
     };
 
     @Override
-    protected String getURL() { return (url+id); }
-
-    @Override
-    protected String getReferer() { return referer; }
-
-    @Override
     public boolean isLeaf(){ return false; }
 
     XMLParser parser = new XMLParser();
+
     @Override
-    protected void parseDoc(InputStream is, int length) throws IOException, Exception {
-        parser.parse(is, myhandler);
+    protected void doReload() {
+        InputStream is = web.getStream(url, ref);
+        if (is == null) { status = web.getStatus(); return ; }
+        try {
+            parser.parse(is, myhandler);
+            status = null;
+        } catch (IOException ex) {
+            status = ex.getMessage();
+            Logger.getLogger(Show.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            status = ex.getMessage();
+            Logger.getLogger(Show.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
 }

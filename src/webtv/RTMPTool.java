@@ -114,13 +114,16 @@ public class RTMPTool extends AbstractTool
                 listener.finished();
             }
         } catch (InterruptedException ex) {
-            listener.incomplete(ex.getMessage());
+            if (downloading) listener.incomplete(ex.getMessage());
+            else listener.incomplete("Cancelled");
             Logger.getLogger(RTMPTool.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
-            listener.incomplete(ex.getMessage());
+            if (downloading) listener.incomplete(ex.getMessage());
+            else listener.incomplete("Cancelled");
             Logger.getLogger(RTMPTool.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
-            listener.incomplete(ex.getMessage());
+            if (downloading) listener.incomplete(ex.getMessage());
+            else listener.incomplete("Cancelled");
             Logger.getLogger(RTMPTool.class.getName()).log(Level.SEVERE, null, ex);
         }
         synchronized (this) {
