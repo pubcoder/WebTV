@@ -74,7 +74,7 @@ public class WGetNode extends CommonNode
     }
 
     public void play() {     
-        String cmd[] = {"/usr/bin/totem", filename};
+        String cmd[] = {"/usr/bin/vlc", filename};
         try {
             Runtime.getRuntime().exec(cmd);
             seen = true;
