@@ -34,7 +34,7 @@ import webtv.zebra.ZebraList;
 public class Main extends JFrame implements TreeWillExpandListener, 
                                             ActionListener, DownloadListener
 {
-    static final int MAX_DOWNLOADS = 3;
+    static final int MAX_DOWNLOADS = 1;
     JTree tree;
     DefaultMutableTreeNode root;
     FileLinkList files;

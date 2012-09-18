@@ -22,7 +22,11 @@ public class CommonNode extends DefaultMutableTreeNode
             };
     private Runnable change = new Runnable(){
                 public void run() {
-                    model.nodeChanged(CommonNode.this);
+                    if (CommonNode.this.getChildCount()>0) {
+                        model.nodeChanged(CommonNode.this);
+                    } else {
+                        model.nodeStructureChanged(CommonNode.this.parent);
+                    }
                 }
             };
 

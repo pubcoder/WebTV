@@ -6,6 +6,7 @@ package webtv;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,7 +19,7 @@ public class RTMPTool extends AbstractTool
 {      
     static final String toolPath = "/usr/bin/rtmpdump";    
     String cmd[];    
-    String cmdSimple[] = new String[]{
+    static final String cmdSimple[] = new String[]{
         toolPath, "--resume", "-r", null, "-o", null
     };
     
@@ -26,7 +27,7 @@ public class RTMPTool extends AbstractTool
     public synchronized void download(String url, String path) {
         if (downloading) return;
         downloading = true;
-        cmd = cmdSimple;
+        cmd = cmdSimple.clone();
         cmd[3] = url;
         cmd[5] = path;
         new Thread(this, "RTMPTool").start();
@@ -44,7 +45,7 @@ public class RTMPTool extends AbstractTool
          * openssl sha -sha256 -hmac "Genuine Adobe Flash Player 001" syndicated.swf
          */    
     
-    String cmdHash[] = new String[]{
+    static final String cmdHash[] = new String[]{
         toolPath, "--resume", "-r", null, "-o", null,
         "--swfhash", null, "--swfsize", null
     };    
@@ -53,25 +54,27 @@ public class RTMPTool extends AbstractTool
     {
         if (downloading) return;
         downloading = true;
-        cmd = cmdHash;
+        cmd = cmdHash.clone();
         cmd[3] = url;     cmd[5] = path;
         cmd[7] = swfHash; cmd[9] = swfSize;
         new Thread(this, "RTMPTool").start();
     }
-    
-    String cmdLong[] = new String[]{
-        toolPath, "--resume", "-r", null, "-o", null,
+    /**
+     * It seems that the --live option is required, 
+     * otherwise it downloads only 0.9%
+     */
+    static final String cmdLong[] = new String[]{
+        toolPath, "--live", "--rtmp", null, "--flv", null,
         "--swfVfy", null, "--pageUrl", null,
         "--tcUrl", null, "--app", null,
-        "--swfAge", "0", "--live",
-        "--flashVer", "LNX 10,3,183,7"
+        "--swfAge", "0", "--flashVer", "LNX 11,3,31,230"
     };
     public synchronized void download(String url, String path,
             String swfUrl, String pageUrl, String targetUrl, String app) 
     {
         if (downloading) return;
         downloading = true;
-        cmd = cmdLong;
+        cmd = cmdLong.clone();
         cmd[3]  = url;       cmd[5]  = path;
         cmd[7]  = swfUrl;    cmd[9]  = pageUrl;
         cmd[11] = targetUrl; cmd[13] = app;
@@ -85,17 +88,19 @@ public class RTMPTool extends AbstractTool
             downloader = Runtime.getRuntime().exec(cmd);
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(downloader.getErrorStream()));
-            int i = -1;
             String line = reader.readLine();
             while (line != null) {
                 line = line.trim();
-                if (line.length() > 0) listener.update(line);
-                i = line.indexOf("filesize");
+                if (line.length() > 0) {
+                    listener.update(line);
+                    int i = line.indexOf("filesize");
+                    if (i >= 0) {
+                        int size = Integer.parseInt(line.substring(i + 8).trim());
+                        listener.updateSize(size);
+                        break;
+                    }
+                }
                 line = reader.readLine();
-            }
-            if (i >= 0) {
-                int size = Integer.parseInt(line.substring(i + 8).trim());
-                listener.updateSize(size);
             }
             while (line != null) {
                 line = line.trim();
@@ -106,10 +111,10 @@ public class RTMPTool extends AbstractTool
                p.getInputStream().close(); p.getOutputStream().close();
                p.getErrorStream().close();
              */
-            i = downloader.waitFor();
+            int c = downloader.waitFor();
             downloader = null;
-            if (i != 0) {
-                listener.incomplete(line + " {" + i + "}");
+            if (c != 0) {
+                listener.incomplete(line + " {" + c + "}");
             } else {
                 listener.finished();
             }

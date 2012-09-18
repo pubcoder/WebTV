@@ -64,7 +64,9 @@ public abstract class Product extends SiteNode
         public void incomplete(String status){
             Product.this.status = status;
             state = State.Incomplete;
-            repaintChange();            
+            for (DownloadListener l: listeners)
+                l.finished(Product.this);
+            repaintChange();
         }
         public void finished(){
             status = null;
@@ -92,7 +94,8 @@ public abstract class Product extends SiteNode
     public void play() {
         if (State.Unknown.equals(state) || State.Loading.equals(state)) return;
         File f = new File(path);
-        String cmd[] = {"/usr/bin/svlc", "--enqueue", f.getAbsolutePath()};
+        String cmd[] = {"/usr/bin/vlc", "--started-from-file", 
+            "--playlist-enqueue", f.getAbsolutePath()};
         try {
             Process p = Runtime.getRuntime().exec(cmd);
             p.getErrorStream().close();
