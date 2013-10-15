@@ -31,7 +31,7 @@ public class ZebraList extends SiteNode
     @Override
     protected void doReload() 
     {        
-        StringBuilder d = web.getDoc(url, ref);
+        String d = web.getDoc(url, ref);
         if (d == null) { status = web.getStatus(); return ; }
         int i = web.find("<div class=\"arrow arrow_selected\"></div>Kanalai</a>");
         if (i<0) return;

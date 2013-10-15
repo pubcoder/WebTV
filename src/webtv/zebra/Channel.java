@@ -47,7 +47,7 @@ public class Channel extends SiteNode
             is.skip(len);
             is.close();
             web.setRequestedWith("XMLHttpRequest");
-            StringBuilder doc = web.getDoc(url, link);
+            String doc = web.getDoc(url, link);
             findShows(doc);
             status = null;
         } catch (IOException ex) {
@@ -57,7 +57,7 @@ public class Channel extends SiteNode
     }
 
     boolean extra = false;
-    private void findShows(StringBuilder doc) {
+    private void findShows(String doc) {
         String durBegin = "<span class=\"time\">&nbsp;";
         String durFinish = "&nbsp;";
         String linkBegin = "<a class=\"title\" href=\"";

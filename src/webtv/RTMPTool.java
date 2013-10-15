@@ -6,7 +6,6 @@ package webtv;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,6 +84,9 @@ public class RTMPTool extends AbstractTool
     public void run() {
         listener.started();
         try {
+            for (String s: cmd)
+                System.out.print(s+" ");
+            System.out.println();
             downloader = Runtime.getRuntime().exec(cmd);
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(downloader.getErrorStream()));
@@ -93,12 +95,15 @@ public class RTMPTool extends AbstractTool
                 line = line.trim();
                 if (line.length() > 0) {
                     listener.update(line);
-                    int i = line.indexOf("filesize");
-                    if (i >= 0) {
-                        int size = Integer.parseInt(line.substring(i + 8).trim());
-                        listener.updateSize(size);
-                        break;
-                    }
+                    if (line.startsWith("INFO:")) {
+                        System.out.println(line);                        
+                        int i = line.indexOf("filesize");
+                        if (i >= 0) {
+                            int size = Integer.parseInt(line.substring(i + 8).trim());
+                            listener.updateSize(size);
+                            break;
+                        }
+                    } else break;
                 }
                 line = reader.readLine();
             }

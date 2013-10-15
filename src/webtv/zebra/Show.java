@@ -32,7 +32,7 @@ public class Show extends Product
     @Override
     protected void doReload() 
     {       
-        StringBuilder d = web.getDoc(url, url);
+        String d = web.getDoc(url, url);
         if (d == null) { status = web.getStatus(); return; }
         link = web.findFirst(linkBegin, linkFinish);
         if (link != null) link = linkPref+link;
@@ -43,7 +43,7 @@ public class Show extends Product
     private void parseAdult() 
     {
         web.setOrigin("http://www.zebra.lt");        
-        StringBuilder d = web.putDoc(url, url, 
+        String d = web.putDoc(url, url, 
                     "enter_adult=1&remember_adult=1", 
                     "application/x-www-form-urlencoded");
         if (d == null) { status = web.getStatus(); return; }

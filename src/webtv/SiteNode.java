@@ -9,6 +9,7 @@ import javax.swing.tree.DefaultTreeModel;
 public abstract class SiteNode extends CommonNode
 {
     protected String title;
+    protected String date;
     protected String status;
     protected boolean busy = false, refreshing = false;
     protected HTTPHelper web = new HTTPHelper();
@@ -60,9 +61,16 @@ public abstract class SiteNode extends CommonNode
         }
     }
 
+    protected void setDate(String date) {
+        this.date = date;
+        repaintChange();
+    }
+    
     @Override
     public String toString() {
-        if (status==null) return title;
-        else return title+" ["+status+"]";
+        StringBuilder s = new StringBuilder(title);
+        if (date != null) s.append(" ").append(date);
+        if (status!=null) s.append(" [").append(status).append("]");
+        return s.toString();
     }
 }

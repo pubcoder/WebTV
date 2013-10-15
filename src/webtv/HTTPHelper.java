@@ -121,7 +121,7 @@ public class HTTPHelper
         return null;
     }
     
-    private StringBuilder readDoc(InputStream is)
+    private String readDoc(InputStream is)
     {
         doc = new StringBuilder();
         if (length<0) length = 4096;
@@ -132,7 +132,7 @@ public class HTTPHelper
                 if (got < 0) break;
                 doc.append(new String(data, 0, got));
             }
-            return doc;
+            return doc.toString();
         } catch (IOException ex) {
             status = ex.getMessage();
             Logger.getLogger(HTTPHelper.class.getName()).log(Level.SEVERE, null, ex);
@@ -140,14 +140,14 @@ public class HTTPHelper
         }        
     }
     
-    public StringBuilder getDoc(String url, String referer)
+    public String getDoc(String url, String referer)
     {
         InputStream is = getStream(url, referer);
         if (is == null) return null;
         return readDoc(is);
     }
     
-    public StringBuilder putDoc(String url, String referer, String content, String type)
+    public String putDoc(String url, String referer, String content, String type)
     {
         InputStream is = putStream(url, referer, content, type);
         if (is == null) return null;

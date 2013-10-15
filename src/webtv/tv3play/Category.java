@@ -15,14 +15,14 @@ public class Category extends CommonNode
 {
     private final String title;
     
-    public Category(DefaultTreeModel model, StringBuilder doc, String title, int start, int end)
+    public Category(DefaultTreeModel model, String doc, String title, int start, int end)
     {
         super(model);
         this.title = title;
         findPrograms(doc, start, end);
     }
     
-    protected final void findPrograms(StringBuilder doc, int start, int end)
+    protected final void findPrograms(String doc, int start, int end)
     {
         final String hrefprog = "<a href=\"/program/";
         final String tagend = "\">";
@@ -37,7 +37,8 @@ public class Category extends CommonNode
             if (progEnd<0) break;
             String prog = doc.substring(progStart, progEnd);
             i = doc.indexOf(hrefprog, progEnd+aend.length());
-            add(new ProgramList(model, prog, url));
+            add(new ProgramRSSList(model, prog, url));
+            //add(new ProgramList(model, prog, url));
         }
     }
     

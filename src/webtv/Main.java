@@ -296,12 +296,16 @@ public class Main extends JFrame implements TreeWillExpandListener,
         Main main = new Main();
     }
 
+    @Override
     public void treeWillExpand(TreeExpansionEvent e) throws ExpandVetoException {
         //System.out.println("willexpand");
-        CommonNode node = (CommonNode)e.getPath().getLastPathComponent();
-        node.refresh();
+        Object o = e.getPath().getLastPathComponent();
+        if (o instanceof CommonNode) {
+            ((CommonNode)o).refresh();
+        }
     }
 
+    @Override
     public void treeWillCollapse(TreeExpansionEvent arg0) throws ExpandVetoException {        
     }
 
@@ -323,6 +327,7 @@ public class Main extends JFrame implements TreeWillExpandListener,
         active.add(p);
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         TreePath path = tree.getSelectionPath();
         if (path != null) {
@@ -330,20 +335,26 @@ public class Main extends JFrame implements TreeWillExpandListener,
             Object o = path.getLastPathComponent();
             if (o instanceof Product) {
                 Product p = (Product)o;
-                if ("Refresh".equals(cmd)) {
-                    p.refresh();
-                } else if ("Enqueue".equals(cmd)) {
-                    enqueue(p);
-                } else if ("Download".equals(cmd)) {
-                    if (active.size() < MAX_DOWNLOADS) {
-                        download(p);
-                    } else {
+                switch (cmd) {
+                    case "Refresh":
+                        p.refresh();
+                        break;
+                    case "Enqueue":
                         enqueue(p);
-                    }
-                } else if ("Play".equals(cmd)) {
-                    p.play();
-                } else if ("Delete".equals(cmd)) {
-                    p.delete();
+                        break;
+                    case "Download":
+                        if (active.size() < MAX_DOWNLOADS) {
+                            download(p);
+                        } else {
+                            enqueue(p);
+                        }
+                        break;
+                    case "Play":
+                        p.play();
+                        break;
+                    case "Delete":
+                        p.delete();
+                        break;
                 }
             } else if (o instanceof SiteNode) {
                 SiteNode node = (SiteNode)o;

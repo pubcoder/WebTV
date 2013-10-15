@@ -28,7 +28,7 @@ public class BalsasList extends SiteNode
 
     @Override
     protected void doReload() {
-        StringBuilder d = web.getDoc(url, ref);
+        String d = web.getDoc(url, ref);
         if (d == null) {status = web.getStatus(); return ; }
         String linkBegin = "http://www.balsas.lt/video/";
         String linkEnd = "\">";

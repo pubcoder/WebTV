@@ -1,7 +1,5 @@
 package webtv.tv3play;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
 import webtv.SiteNode;
@@ -23,44 +21,46 @@ public class ProgramList extends SiteNode
 
     @Override
     public boolean isLeaf(){ return false; }    
-    
+
+    static final String listbegin = "<h2>Serijų";
+    static final String hrefplay = "<a href=\"/play/";
+    static final String hrefend = "\">";
+    static final String spanname = "class=\"formatname\">";
+    static final String spanepisode = "class=\"episodeinfo\">";
+    static final String spanend = "</span>";
+    static final String divdate = "class=\"broadcast-date";
+    static final String divstart = ">";
+    static final String divend = "</div>";
+
     @Override
     protected void doReload() 
     {
-        StringBuilder doc = web.getDoc(url, TV3Play.url);
+        String doc = web.getDoc(url, TV3Play.url);
         if (doc == null) { status = web.getStatus(); return; }        
-        final String listbegin = "<h2>Serijų sąrašas</h2>";
-        final String hrefplay = "<a href=\"/play/";
-        final String tagend = "/\" >";
-        final String aend = "</a>";
-        final String td2begin = "<td class=\"col2\">";
-        final String td3begin = "<td class=\"col3\">";
-        final String td4begin = "<td class=\"col4\">";
-        final String tdend = "</td>";
 
         int i = web.find(listbegin);
         if (i<0) return;
         web.skipLastPostfix();
-        String id = web.findNext(hrefplay, tagend);
+        String id = web.findNext(hrefplay, hrefend);
         while (id != null){
+            int q = id.indexOf('?');
+            if (q>=0) id = id.substring(0, q);
             web.skipLastPostfix();
-            String name = web.findNext(aend);
+            String name = web.findNext(spanname, spanend);
             if (name==null) break;
             web.skipLastPostfix();
-            String no = web.findNext(td2begin, tdend);
-            if (no==null) break;
+            String episode = web.findNext(spanepisode, spanend);
+            if (episode==null) break;
             web.skipLastPostfix();
-            String duration = web.findNext(td3begin, tdend);
-            if (duration==null) break;
-            web.skipLastPostfix();
-            String date = web.findNext(td4begin, tdend);
+            web.find(divdate); web.skipLastPostfix();
+            String date = web.findNext(divstart, divend);
             if (date==null) break;
-            web.skipLastPostfix();            
+            web.skipLastPostfix();
             if (!ids.contains(id)){
-                add(new Program(model, id, name+" "+date+" (#"+no+") "+duration));
+                add(new Program(model, id, name+" "+date+" ("+episode+")"));
                 ids.add(id);
             }
-            id = web.findNext(hrefplay, tagend);
+            id = web.findNext(hrefplay, hrefend);
         }
         status = null;
     }    

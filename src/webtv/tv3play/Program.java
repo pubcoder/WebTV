@@ -51,7 +51,8 @@ public class Program extends Product
         page = "http://www.tv3play.lt/play/"+id+"/";
         long rnd = System.currentTimeMillis()/1000;
         refererRnd = "http://flvplayer.viastream.viasat.tv/flvplayer/play/swf/player.swf?rnd="+rnd;
-        swfRnd = "http://flvplayer.viastream.viasat.tv/play/swf/player110516.swf?rnd="+rnd;
+        swfRnd = refererRnd;
+        //swfRnd = "http://flvplayer.viastream.viasat.tv/play/swf/player110516.swf?rnd="+rnd;
         setUserObject(title);
         refresh();        
     }
@@ -72,7 +73,11 @@ public class Program extends Product
         if (is == null) { status = web.getStatus(); return; }
         try {
             parser.parse(is, myhandler);
-            status = null;
+            if (link.startsWith("http")) {
+                web.getDoc(link, url);
+                url = web.findFirst("<Url>", "</Url>");
+                status = web.findFirst("<Msg>", "</Msg>");
+            } else status = null;
         } catch (IOException ex) {
             status = ex.getMessage();
             Logger.getLogger(Program.class.getName()).log(Level.SEVERE, null, ex);

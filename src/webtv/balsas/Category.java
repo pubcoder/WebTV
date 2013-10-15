@@ -28,7 +28,7 @@ class Category extends SiteNode
     public boolean isLeaf(){ return false; }    
 
     protected void doReload() {
-        StringBuilder doc = web.getDoc(url, BalsasList.url);
+        String doc = web.getDoc(url, BalsasList.url);
         if (doc == null) { status = web.getStatus(); return ; }
         String titleDiv = "<div class=\"title\">";
         int i = web.find(titleDiv);

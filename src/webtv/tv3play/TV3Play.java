@@ -20,7 +20,7 @@ public class TV3Play extends SiteNode
     @Override
     protected void doReload()
     {
-        StringBuilder doc = web.getDoc(url, ref);
+        String doc = web.getDoc(url, ref);
         if (doc == null) {status = web.getStatus(); return ; }
         final String h2id = "<h2 id=\"";
         final String tagend = "\">";
