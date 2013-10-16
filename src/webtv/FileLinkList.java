@@ -27,7 +27,7 @@ public class FileLinkList extends CommonNode {
         new Thread("FileLinkList"){
             @Override
             public void run(){
-                File dir = new File("wget");
+                File dir = new File(System.getProperty("user.dir"));
                 if (dir.exists() && dir.isDirectory()) {
                     for (File f : dir.listFiles()) {
                         if (f.isFile() && !files.contains(f)) {

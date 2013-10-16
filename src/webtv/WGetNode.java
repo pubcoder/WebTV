@@ -30,7 +30,7 @@ public class WGetNode extends CommonNode
         } catch (URISyntaxException ex) {
             Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
         }
-        filename = "wget/"+title+".flv";
+        filename = title+".flv";
         this.title = title;
         scheme = addr.getScheme();
         File f;
@@ -119,7 +119,7 @@ public class WGetNode extends CommonNode
                 repaintChange();
                 String cmd[] = new String[] {
                     "/usr/bin/wget", "-c", addr.toString(), 
-                    "-O", "wget/"+filename
+                    "-O", filename
                 };
                 try {
                     //System.out.println("Executing download");

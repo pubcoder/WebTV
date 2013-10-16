@@ -38,7 +38,7 @@ public abstract class Product extends SiteNode
 
     public Product(DefaultTreeModel model, String title, DownloadTool tool){
         super(model, title);
-        path = "wget/"+title+".flv";
+        path = title+".flv";
         this.tool = tool;
         tool.setProgressListener(plistener);
         checkFileState();

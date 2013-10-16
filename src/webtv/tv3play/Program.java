@@ -28,7 +28,7 @@ public class Program extends Product
         super(model, "TV3Play-"+id, new RTMPTool());
         this.id = id;
         this.url = "http://viastream.viasat.tv/products/"+id;
-        path = "wget/"+title+".flv";
+        path = title+".flv";
         checkFileState();
 
         page = "http://www.tv3play.lt/play/"+id+"/";
@@ -45,7 +45,7 @@ public class Program extends Product
         this.id = id;
         this.url = "http://viastream.viasat.tv/PlayProduct/"+id;
         titleField = title;
-        path = "wget/"+this.title+".flv";
+        path = this.title+".flv";
         checkFileState();
 
         page = "http://www.tv3play.lt/play/"+id+"/";
