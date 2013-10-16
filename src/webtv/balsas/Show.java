@@ -4,8 +4,6 @@
  */
 package webtv.balsas;
 
-import java.io.IOException;
-import java.io.InputStream;
 import javax.swing.tree.DefaultTreeModel;
 import webtv.Product;
 import webtv.WGetTool;

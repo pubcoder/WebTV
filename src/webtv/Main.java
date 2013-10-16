@@ -22,6 +22,7 @@ import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.*;
 import webtv.balsas.BalsasList;
+import webtv.lnk.LNKList;
 import webtv.tv3play.Program;
 import webtv.tv3play.TV3Play;
 import webtv.tv3webtv.SiteMapNode;
@@ -49,8 +50,8 @@ public class Main extends JFrame implements TreeWillExpandListener,
         root = new DefaultMutableTreeNode("WebTV ;-)");
         model.setRoot(root);
         root.add(new TV3Play(model));
+        root.add(new LNKList(model));        
         root.add(new ZebraList(model));
-        root.add(new BalsasList(model));
         root.add(new SiteMapNode(model, "TV3 WebTV.lt", "0"));
         root.add(files = new FileLinkList(model));        
         tree = new JTree(model);

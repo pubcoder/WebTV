@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package webtv;
 
 import java.io.BufferedReader;
@@ -58,6 +54,23 @@ public class RTMPTool extends AbstractTool
         cmd[7] = swfHash; cmd[9] = swfSize;
         new Thread(this, "RTMPTool").start();
     }
+
+    static final String cmdWithPath[] = new String[]{
+        toolPath, "--rtmp", null, "--playpath", null,
+        "--swfVfy", null, "--pageUrl", null,
+        "--flv", null, "--flashVer", "LNX 11,3,31,230"
+    };
+    public synchronized void download(String rtmp, String playpath,
+        String swfVfy, String pageUrl, String outputPath) 
+    {
+        if (downloading) return;
+        downloading = true;
+        cmd = cmdWithPath.clone();
+        cmd[2] = rtmp;     cmd[4] = playpath;    cmd[6] = swfVfy;
+        cmd[8] = pageUrl;  cmd[10] = outputPath;
+        new Thread(this, "RTMPTool").start();
+    }
+    
     /**
      * It seems that the --live option is required, 
      * otherwise it downloads only 0.9%
@@ -68,14 +81,14 @@ public class RTMPTool extends AbstractTool
         "--tcUrl", null, "--app", null,
         "--swfAge", "0", "--flashVer", "LNX 11,3,31,230"
     };
-    public synchronized void download(String url, String path,
-            String swfUrl, String pageUrl, String targetUrl, String app) 
+    public synchronized void download(String rtmp, String outputPath,
+            String swfVfy, String pageUrl, String targetUrl, String app) 
     {
         if (downloading) return;
         downloading = true;
         cmd = cmdLong.clone();
-        cmd[3]  = url;       cmd[5]  = path;
-        cmd[7]  = swfUrl;    cmd[9]  = pageUrl;
+        cmd[3]  = rtmp;       cmd[5]  = outputPath;
+        cmd[7]  = swfVfy;    cmd[9]  = pageUrl;
         cmd[11] = targetUrl; cmd[13] = app;
         new Thread(this, "RTMPTool").start();
     }
