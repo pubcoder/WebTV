@@ -1,7 +1,5 @@
 package webtv.zebra;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
 import webtv.SiteNode;
@@ -12,9 +10,9 @@ import webtv.SiteNode;
  */
 public class ZebraList extends SiteNode 
 {
-    public static final String site = "http://www.zebra.lt";
-    public static final String url = "http://www.zebra.lt/lt/video/kanalai";
-    public static final String ref = "http://www.zebra.lt/lt/video";
+    public static final String site = "http://zebra.15min.lt";
+    public static final String url = "http://zebra.15min.lt/lt/video/kanalai";
+    public static final String ref = "http://zebra.15min.lt/lt/video";
 
     private TreeSet<String> ids = new TreeSet<String>();
     

@@ -16,7 +16,7 @@ public abstract class SiteNode extends CommonNode
 
     public SiteNode(DefaultTreeModel model, String title){
         super(model);
-        this.title = title;
+        this.title = title.trim();
     }
 
     @Override
@@ -62,7 +62,8 @@ public abstract class SiteNode extends CommonNode
     }
 
     protected void setDate(String date) {
-        this.date = date;
+        if (date != null) this.date = date.trim();
+        else this.date = date;
         repaintChange();
     }
     

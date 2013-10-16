@@ -136,19 +136,20 @@ public abstract class Product extends SiteNode
 */
     @Override
     public String toString(){
-        String r = title;
-        if (seen) r = r+" [seen]";
+        StringBuilder r = new StringBuilder(title);
+        if (date != null) r.append(' ').append(date);
+        if (seen) r.append(" [seen]");
         switch (state) {
             case Unknown:
             case Downloading:
-                if (status != null) r = r + " ["+status+"]";
+                if (status != null) r.append(" [").append(status).append("]");
                 break;
             default: 
-                if (status==null) r = r +" ["+state+"]";
-                else r = r +" ["+state+": "+status+"]";
+                if (status==null) r.append(" [").append(state).append("]");
+                else r.append(" [").append(state).append(": ").append(status).append("]");
                 break;
         }
-        return r;
+        return r.toString();
     }
     HashSet<DownloadListener> listeners =  new HashSet<DownloadListener>();
     public void addDownloadListener(DownloadListener d) {

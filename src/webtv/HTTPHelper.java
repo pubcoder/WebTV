@@ -43,6 +43,8 @@ public class HTTPHelper
         resetDoc();
         try {
             HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
+            con.setDoInput(true);
+            con.setDoOutput(true);            
             con.setRequestMethod("POST");
             con.setRequestProperty("User-Agent", agent);
             con.setRequestProperty("Referer", url);
@@ -51,23 +53,13 @@ public class HTTPHelper
             if (origin != null) con.setRequestProperty("Origin", origin);
             con.setRequestProperty("Content-Type", type);
             if (cookie != null) con.setRequestProperty("Cookie", cookie);
-            con.setDoInput(true);
-            con.setDoOutput(true);
-            con.connect();
-            int res = con.getResponseCode();
-            if (res == HttpURLConnection.HTTP_OK) {            
-                OutputStream os = con.getOutputStream();
-                os.write(content.getBytes());
-                os.flush();
-                os.close();
-                InputStream is = con.getInputStream();
-                cookie = con.getHeaderField("Set-Cookie");
-                length = con.getContentLength();
-                return is;
-            } else {
-                status = con.getResponseMessage();
-                System.err.println(status);                
-            }
+            OutputStream os = con.getOutputStream();
+            os.write(content.getBytes());
+            os.flush();
+            InputStream is = con.getInputStream();
+            cookie = con.getHeaderField("Set-Cookie");
+            length = con.getContentLength();
+            return is;
         } catch (IOException ex) {
             status = ex.getMessage();
             Logger.getLogger(HTTPHelper.class.getName()).log(Level.SEVERE, null, ex);

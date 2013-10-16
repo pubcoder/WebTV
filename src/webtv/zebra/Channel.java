@@ -16,7 +16,7 @@ import webtv.SiteNode;
  */
 public class Channel extends SiteNode 
 {
-    static final String defaultUrl = "http://www.zebra.lt/lt/video/kanalai//naujausi";
+    static final String defaultUrl = "http://zebra.15min.lt/lt/video/kanalai//naujausi";
     String url = defaultUrl;
     String link = null;
     private TreeSet<String> ids = new TreeSet<String>();
@@ -88,9 +88,9 @@ public class Channel extends SiteNode
         if (defaultUrl.equals(url) && !extra) {
             extra = true;
             add(new Channel(model, "Populiariausi", link, web.getCookie(),
-                    "http://www.zebra.lt/lt/video/kanalai//populiariausi"));
+                    "http://zebra.15min.lt/lt/video/kanalai//populiariausi"));
             add(new Channel(model, "Geriausi", link, web.getCookie(),
-                    "http://www.zebra.lt/lt/video/kanalai//geriausi"));
+                    "http://zebra.15min.lt/lt/video/kanalai//geriausi"));
         }
     }
     

@@ -1,5 +1,10 @@
 package webtv.zebra;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import webtv.Product;
 import webtv.WGetTool;
@@ -25,8 +30,8 @@ public class Show extends Product
             tool.download(link, path); 
     }
 
-    static final String linkPref="http://mano.zebra.lt/video/zebra_video/";
-    static final String linkBegin="http:\\/\\/mano.zebra.lt\\/video\\/zebra_video\\/";
+    static final String linkPref="http://vf.zebra.lt/files/";
+    static final String linkBegin="http:\\/\\/vf.zebra.lt\\/files\\/";
     static final String linkFinish = "\"";
     
     @Override
@@ -35,19 +40,25 @@ public class Show extends Product
         String d = web.getDoc(url, url);
         if (d == null) { status = web.getStatus(); return; }
         link = web.findFirst(linkBegin, linkFinish);
-        if (link != null) link = linkPref+link;
-        else parseAdult();
-        status = null;
+        if (link != null) {
+            link = linkPref+link;
+            status = null;           
+            setDate(web.findFirst("<span class=\"uploaded\">Įkeltas:</span>", "</"));
+        } else parseAdult();
     }
 
     private void parseAdult() 
     {
-        web.setOrigin("http://www.zebra.lt");        
+        web.setOrigin("http://zebra.15min.lt");
         String d = web.putDoc(url, url, 
                     "enter_adult=1&remember_adult=1", 
                     "application/x-www-form-urlencoded");
         if (d == null) { status = web.getStatus(); return; }
         link = web.findFirst(linkBegin, linkFinish);
-        if (link != null) link = linkPref+link;
+        if (link != null) {
+            link = linkPref+link;
+            status = null;            
+            setDate(web.findFirst("<span class=\"uploaded\">Įkeltas:</span>", "</"));
+        }
     }
 }
