@@ -10,57 +10,46 @@ import webtv.SiteNode;
  */
 public class ProgramList extends SiteNode 
 {
-    private final String url;
+    private final String url, ref;
     private TreeSet<String> ids = new TreeSet<String>();
 
-    public ProgramList(DefaultTreeModel model, String title, String url) {
+    public ProgramList(DefaultTreeModel model, String url, String ref, String title) {
         super(model, title);
         this.url = url;
+        this.ref = ref;
         setAllowsChildren(true);
     }
 
     @Override
     public boolean isLeaf(){ return false; }    
 
-    static final String listbegin = "<h2>Serijų";
-    static final String hrefplay = "<a href=\"/play/";
-    static final String hrefend = "\">";
-    static final String spanname = "class=\"formatname\">";
-    static final String spanepisode = "class=\"episodeinfo\">";
-    static final String spanend = "</span>";
-    static final String divdate = "class=\"broadcast-date";
-    static final String divstart = ">";
-    static final String divend = "</div>";
-
     @Override
     protected void doReload() 
     {
-        String doc = web.getDoc(url, TV3Play.url);
-        if (doc == null) { status = web.getStatus(); return; }        
-
-        int i = web.find(listbegin);
-        if (i<0) return;
-        web.skipLastPostfix();
-        String id = web.findNext(hrefplay, hrefend);
-        while (id != null){
-            int q = id.indexOf('?');
-            if (q>=0) id = id.substring(0, q);
+        String doc = web.getDoc(url, ref);
+        if (doc == null) { status = web.getStatus(); return; }
+        final String dateBegin = "data-published=\"<strong>Patalpinta</strong>";
+        final String dateEnd = "\"";
+        final String linkBegin = "<a href=\""+url+"/";
+        final String linkEnd = "?";
+        final String nameBegin = "<h3 class=\"clip-title\">";
+        final String nameEnd = "</h3>";
+        String date = web.findFirst(dateBegin, dateEnd);
+        while (date != null){
+            date = date.trim();
             web.skipLastPostfix();
-            String name = web.findNext(spanname, spanend);
-            if (name==null) break;
+            String id = web.findNext(linkBegin, linkEnd);
+            if (id == null) break;
             web.skipLastPostfix();
-            String episode = web.findNext(spanepisode, spanend);
-            if (episode==null) break;
+            String name = web.findNext(nameBegin, nameEnd);
+            if (name == null) break;
+            name = name.trim();
             web.skipLastPostfix();
-            web.find(divdate); web.skipLastPostfix();
-            String date = web.findNext(divstart, divend);
-            if (date==null) break;
-            web.skipLastPostfix();
-            if (!ids.contains(id)){
-                add(new Program(model, id, name+" "+date+" ("+episode+")"));
-                ids.add(id);
+            if (!ids.contains(name)){
+                add(new Program(model, id, title+" ("+name+") "+date));
+                ids.add(name);
             }
-            id = web.findNext(hrefplay, hrefend);
+            date = web.findNext(dateBegin, dateEnd);
         }
         status = null;
     }    

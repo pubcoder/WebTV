@@ -12,7 +12,8 @@ import java.util.logging.Logger;
  */
 public class RTMPTool extends AbstractTool
 {      
-    static final String toolPath = "/usr/bin/rtmpdump";    
+    static final String toolPath = "/usr/bin/rtmpdump";
+    static final String flashVer = "LNX 11,3,31,230";
     String cmd[];    
     static final String cmdSimple[] = new String[]{
         toolPath, "--resume", "-r", null, "-o", null
@@ -58,7 +59,7 @@ public class RTMPTool extends AbstractTool
     static final String cmdWithPath[] = new String[]{
         toolPath, "--rtmp", null, "--playpath", null,
         "--swfVfy", null, "--pageUrl", null,
-        "--flv", null, "--flashVer", "LNX 11,3,31,230"
+        "--flv", null, "--flashVer", flashVer
     };
     public synchronized void download(String rtmp, String playpath,
         String swfVfy, String pageUrl, String outputPath) 
@@ -79,7 +80,7 @@ public class RTMPTool extends AbstractTool
         toolPath, "--live", "--rtmp", null, "--flv", null,
         "--swfVfy", null, "--pageUrl", null,
         "--tcUrl", null, "--app", null,
-        "--swfAge", "0", "--flashVer", "LNX 11,3,31,230"
+        "--swfAge", "0", "--flashVer", flashVer
     };
     public synchronized void download(String rtmp, String outputPath,
             String swfVfy, String pageUrl, String targetUrl, String app) 

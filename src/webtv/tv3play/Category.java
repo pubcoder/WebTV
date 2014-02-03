@@ -4,44 +4,51 @@
  */
 package webtv.tv3play;
 
+import java.util.TreeSet;
 import javax.swing.tree.DefaultTreeModel;
-import webtv.CommonNode;
+import webtv.SiteNode;
 
 /**
  *
  * @author marius
  */
-public class Category extends CommonNode 
+public class Category extends SiteNode 
 {
-    private final String title;
+    private static String ref = TV3Play.url;    
+    private final String url;
+    private TreeSet<String> ids = new TreeSet<>();    
     
-    public Category(DefaultTreeModel model, String doc, String title, int start, int end)
+    public Category(DefaultTreeModel model, String url, String title)
     {
-        super(model);
-        this.title = title;
-        findPrograms(doc, start, end);
+        super(model, title);
+        this.url = url;
+        setAllowsChildren(true);        
     }
-    
-    protected final void findPrograms(String doc, int start, int end)
-    {
-        final String hrefprog = "<a href=\"/program/";
-        final String tagend = "\">";
-        final String aend = "</a>";
-        int i = doc.indexOf(hrefprog, start);
-        while (i>0 && i<end) {            
-            int urlend = doc.indexOf(tagend, i+hrefprog.length());
-            if (urlend < 0) break;
-            String url = "http://www.tv3play.lt"+doc.substring(i+"<a href=\"".length(), urlend);
-            int progStart = urlend+tagend.length();
-            int progEnd = doc.indexOf(aend, progStart);
-            if (progEnd<0) break;
-            String prog = doc.substring(progStart, progEnd);
-            i = doc.indexOf(hrefprog, progEnd+aend.length());
-            add(new ProgramRSSList(model, prog, url));
-            //add(new ProgramList(model, prog, url));
-        }
-    }
+
+    @Override
+    public boolean isLeaf(){ return false; }    
     
     @Override
-    public String toString() { return title; }    
+    protected void doReload() {
+        String doc = web.getDoc(url, ref);
+        if (doc == null) {status = web.getStatus(); return ; }
+        final String linkPrefix = "http://www.tv3play.lt/programos/";
+        final String linkBegin = "<a href=\""+linkPrefix;
+        final String linkEnd = "\"";
+        final String titleBegin = "<h3 class=\"clip-title\">";
+        final String titleEnd = "</h3>";
+        String link = web.findFirst(linkBegin, linkEnd);
+        while (link != null && link.length()>0) {
+            web.skipLastPostfix();
+            String title = web.findNext(titleBegin, titleEnd);
+            if (title == null || title.length() == 0) break;
+            if (!ids.contains(title)) {
+                add(new ProgramList(model, linkPrefix+link, url, title));
+                ids.add(title);
+            }
+            web.skipLastPostfix();
+            link = web.findNext(linkBegin, linkEnd);
+        }
+        status = null;
+    }
 }

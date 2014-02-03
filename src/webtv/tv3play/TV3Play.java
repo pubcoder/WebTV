@@ -10,9 +10,9 @@ import webtv.SiteNode;
  */
 public class TV3Play extends SiteNode 
 {
-    public static final String url = "http://www.tv3play.lt/categories";
     public static final String ref = "http://www.tv3play.lt/";
-    private TreeSet<String> ids = new TreeSet<String>();
+    public static final String url = "http://www.tv3play.lt/programos";
+    private TreeSet<String> ids = new TreeSet<>();
   
     @Override
     public boolean isLeaf(){ return false; }    
@@ -22,21 +22,22 @@ public class TV3Play extends SiteNode
     {
         String doc = web.getDoc(url, ref);
         if (doc == null) {status = web.getStatus(); return ; }
-        final String h2id = "<h2 id=\"";
-        final String tagend = "\">";
-        final String h2end = "</h2>";
-        int i = web.find(h2id);
-        while (i>=0) {
+        final String linkPrefix = "http://www.tv3play.lt/kategorijos/";
+        final String linkBegin = "<a href=\""+linkPrefix;
+        final String linkEnd = "\"";
+        final String titleBegin = "<h3 class=\"clip-title\">";
+        final String titleEnd = "</h3>";
+        String link = web.findFirst(linkBegin, linkEnd);
+        while (link != null && link.length()>0) {
             web.skipLastPostfix();
-            String cat = web.findNext(tagend, h2end);
-            int catStart = web.skipLastPostfix();
-            i = web.find(h2id);
-            int next = i;
-            if (next<0) next = doc.length();
-            if (!ids.contains(cat)) {
-                add(new Category(model, doc, cat, catStart, next));
-                ids.add(cat);
+            String title = web.findNext(titleBegin, titleEnd);
+            if (title == null || title.length() == 0) break;
+            if (!ids.contains(title)) {
+                add(new Category(model, linkPrefix+link, title));
+                ids.add(title);
             }
+            web.skipLastPostfix();
+            link = web.findNext(linkBegin, linkEnd);
         }
         status = null;
     }
