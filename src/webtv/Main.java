@@ -2,6 +2,7 @@ package webtv;
 
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.PopupMenu;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,7 +23,6 @@ import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.*;
-import webtv.balsas.BalsasList;
 import webtv.lnk.LNKList;
 import webtv.tv3play.Program;
 import webtv.tv3play.TV3Play;
@@ -42,9 +43,16 @@ public class Main extends JFrame implements TreeWillExpandListener,
     DefaultTreeModel model;
     JPopupMenu nodeMenu;
     JPopupMenu prodMenu;
-    Queue<Product> queue = new ConcurrentLinkedQueue<Product>();
-    HashSet<Product> active = new HashSet<Product>();
+    Queue<Product> queue = new ConcurrentLinkedQueue<>();
+    HashSet<Product> active = new HashSet<>();
     static final String pngs[] = {"tv3-16.png","tv3-24.png","tv3-32.png","tv3-48.png","tv3-64.png" };
+    private static final String refreshMenu = "Refresh";
+    private static final String launchMenu = "Launch";    
+    private static final String enqueueMenu = "Enqueue";
+    private static final String downloadMenu = "Download";
+    private static final String deleteMenu = "Delete";    
+    private static final String playMenu = "Play";
+
     public Main(){
         model = new DefaultTreeModel(null);
         root = new DefaultMutableTreeNode("WebTV ;-)");
@@ -62,10 +70,11 @@ public class Main extends JFrame implements TreeWillExpandListener,
         //tree.getModel().valueForPathChanged(arg0, tree)
         //tree.setShowsRootHandles(true);
         tree.addKeyListener(new KeyListener(){
+            @Override
             public void keyTyped(KeyEvent e) {
                 TreePath path = tree.getSelectionPath();
+                if (path == null) return;                
                 Object o = path.getLastPathComponent();
-                if (path == null) return;
                 switch (e.getKeyChar()) {
                     case 10:
                     case 13:
@@ -92,16 +101,19 @@ public class Main extends JFrame implements TreeWillExpandListener,
                         System.out.println("Typed: "+((int)e.getKeyChar())+" "+e);
                 }
             }
+            @Override
             public void keyPressed(KeyEvent e) {}
+            @Override
             public void keyReleased(KeyEvent e) {}
         });
         nodeMenu = createNodeMenu();
         prodMenu = createProductMenu();
         add(new JScrollPane(tree));
-        ArrayList<Image> imageList = new ArrayList<Image>(pngs.length);
+        ArrayList<Image> imageList = new ArrayList<>(pngs.length);
         for (String name: pngs) {
-            ImageIcon i = new ImageIcon(getClass().getResource("/webtv/"+name));
-            if (i != null) imageList.add(i.getImage());
+            URL url = getClass().getResource("/webtv/"+name);
+            if (url == null) continue;
+            imageList.add(new ImageIcon(url).getImage());
         }
         if (!imageList.isEmpty()) setIconImages(imageList);
 
@@ -131,6 +143,7 @@ public class Main extends JFrame implements TreeWillExpandListener,
         });
     }
 
+    @Override
     public synchronized void finished(Product p) {
         boolean c = active.remove(p);
         if (!c) {
@@ -202,9 +215,7 @@ public class Main extends JFrame implements TreeWillExpandListener,
                         Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
                     } catch (java.net.MalformedURLException ex) {
                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (UnsupportedFlavorException ex) {
-                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (IOException ex) {
+                    } catch (UnsupportedFlavorException | IOException ex) {
                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
@@ -269,23 +280,21 @@ public class Main extends JFrame implements TreeWillExpandListener,
 
     final JPopupMenu createNodeMenu(){
         JPopupMenu menu = new JPopupMenu();
-        JMenuItem mi = new JMenuItem("Refresh");
-        mi.addActionListener(this); menu.add(mi);
+        menu.add(refreshMenu).addActionListener(this);
+        menu.addSeparator();
+        menu.add(Settings.getMenu(this));
         return menu;
     }
 
     final JPopupMenu createProductMenu(){
         JPopupMenu menu = new JPopupMenu();
-        JMenuItem mi = new JMenuItem("Launch");
-        mi.addActionListener(this); menu.add(mi);
-        mi = new JMenuItem("Enqueue");
-        mi.addActionListener(this); menu.add(mi);
-        mi = new JMenuItem("Download");
-        mi.addActionListener(this); menu.add(mi);
-        mi = new JMenuItem("Play");
-        mi.addActionListener(this); menu.add(mi);
-        mi = new JMenuItem("Delete");
-        mi.addActionListener(this); menu.add(mi);
+        menu.add(launchMenu).addActionListener(this);
+        menu.add(enqueueMenu).addActionListener(this);
+        menu.add(downloadMenu).addActionListener(this);
+        menu.add(playMenu).addActionListener(this);
+        menu.add(deleteMenu).addActionListener(this);
+        menu.addSeparator();
+        menu.add(Settings.getMenu(this));
         return menu;
     }
 
@@ -337,23 +346,23 @@ public class Main extends JFrame implements TreeWillExpandListener,
             if (o instanceof Product) {
                 Product p = (Product)o;
                 switch (cmd) {
-                    case "Refresh":
+                    case refreshMenu:
                         p.refresh();
                         break;
-                    case "Enqueue":
+                    case enqueueMenu:
                         enqueue(p);
                         break;
-                    case "Download":
+                    case downloadMenu:
                         if (active.size() < MAX_DOWNLOADS) {
                             download(p);
                         } else {
                             enqueue(p);
                         }
                         break;
-                    case "Play":
+                    case playMenu:
                         p.play();
                         break;
-                    case "Delete":
+                    case deleteMenu:
                         p.delete();
                         break;
                 }
@@ -362,12 +371,16 @@ public class Main extends JFrame implements TreeWillExpandListener,
                 node.refresh();
             } else if (o instanceof WGetNode) {
                 WGetNode w = (WGetNode)o;
-                if ("Download".equals(cmd)) {
-                    w.download();
-                } else if ("Play".equals(cmd)) {
-                    w.play();
-                } else if ("Delete".equals(cmd)) {
-                    w.delete();
+                if (null != cmd) switch (cmd) {
+                    case downloadMenu:
+                        w.download();
+                        break;
+                    case playMenu:
+                        w.play();
+                        break;
+                    case deleteMenu:
+                        w.delete();
+                        break;
                 }
             }
         }

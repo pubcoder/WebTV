@@ -74,7 +74,7 @@ public class WGetNode extends CommonNode
     }
 
     public void play() {     
-        String cmd[] = {"/usr/bin/vlc", filename};
+        String cmd[] = { Settings.vlcPath, filename };
         try {
             Runtime.getRuntime().exec(cmd);
             seen = true;
@@ -112,51 +112,46 @@ public class WGetNode extends CommonNode
         if (downloading) return;
         if ("file".equals(addr.getScheme())) return;
         downloading = true;
-        new Thread(new Runnable(){
-            public void run() {
-                //System.out.println("Loading product");
-                status = "downloading";
-                repaintChange();
-                String cmd[] = new String[] {
-                    "/usr/bin/wget", "-c", addr.toString(), 
-                    "-O", filename
-                };
-                try {
-                    //System.out.println("Executing download");
-                    System.out.println("Downloading: "+addr);
-                    downloader = Runtime.getRuntime().exec(cmd);
-                    BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(downloader.getErrorStream()));
-                    int i = -1;
-                    String line = reader.readLine();
-                    while (line != null) {
-                        line = line.trim();
-                        if (line.length() > 0) {                            
-                            status = line;
-                            repaintChange();
-                        }
-                        line = reader.readLine();
+        new Thread(() -> {
+            status = "downloading";
+            repaintChange();
+            String cmd[] = new String[] {
+                Settings.wgetPath, "-c", addr.toString(),
+                "-O", filename
+            };
+            try {
+                //System.out.println("Executing download");
+                System.out.println("Downloading: "+addr);
+                downloader = Runtime.getRuntime().exec(cmd);
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(downloader.getErrorStream()));
+                int i = -1;
+                String line = reader.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    if (line.length() > 0) {
+                        status = line;
+                        repaintChange();
                     }
-/*                    p.getInputStream().close();
-                    p.getOutputStream().close();
-                    p.getErrorStream().close();*/
-                    i = downloader.waitFor();
-                    downloader = null;
-                    if (i!=0) {
-                        status = status + " {"+i + "}";
-                    } else {
-                        status = "[ready]";
-                        ready = true;
-                    }
-                    //System.out.println("Finished download");
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
+                    line = reader.readLine();
                 }
-                downloading = false;
-                repaintChange();
+                /*                    p.getInputStream().close();
+                p.getOutputStream().close();
+                p.getErrorStream().close();*/
+                i = downloader.waitFor();
+                downloader = null;
+                if (i!=0) {
+                    status = status + " {"+i + "}";
+                } else {
+                    status = "[ready]";
+                    ready = true;
+                }
+                //System.out.println("Finished download");
+            } catch (InterruptedException | IOException ex) {
+                Logger.getLogger(WGetNode.class.getName()).log(Level.SEVERE, null, ex);
             }
+            downloading = false;
+            repaintChange();
         }).start();
     }
 }

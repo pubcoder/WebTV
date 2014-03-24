@@ -11,12 +11,11 @@ import java.util.logging.Logger;
  * @author marius
  */
 public class RTMPTool extends AbstractTool
-{      
-    static final String toolPath = "/usr/bin/rtmpdump";
+{
     static final String flashVer = "LNX 11,3,31,230";
     String cmd[];    
     static final String cmdSimple[] = new String[]{
-        toolPath, "--resume", "-r", null, "-o", null
+        Settings.rtmpPath, "--resume", "-r", null, "-o", null
     };
     
     @Override
@@ -24,25 +23,26 @@ public class RTMPTool extends AbstractTool
         if (downloading) return;
         downloading = true;
         cmd = cmdSimple.clone();
+        cmd[0] = Settings.rtmpPath;
         cmd[3] = url;
         cmd[5] = path;
         new Thread(this, "RTMPTool").start();
     }
 
-        /*
-         * How to get swfsize and swfhash:
-         * download the player:
-         * wget "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf"
-         * "unzip" it:
-         * flasm -x syndicated.swf
-         * check the unzipped size:
-         * ls -l syndicated.swf
-         * compute the SHA256:
-         * openssl sha -sha256 -hmac "Genuine Adobe Flash Player 001" syndicated.swf
-         */    
+    /*
+     * How to get swfsize and swfhash:
+     * download the player:
+     * wget "http://flvplayer.viastream.viasat.tv/flvplayer/syndicatedPlayer/syndicated.swf"
+     * "unzip" it:
+     * flasm -x syndicated.swf
+     * check the unzipped size:
+     * ls -l syndicated.swf
+     * compute the SHA256:
+     * openssl sha -sha256 -hmac "Genuine Adobe Flash Player 001" syndicated.swf
+     */
     
     static final String cmdHash[] = new String[]{
-        toolPath, "--resume", "-r", null, "-o", null,
+        Settings.rtmpPath, "--resume", "-r", null, "-o", null,
         "--swfhash", null, "--swfsize", null
     };    
     public synchronized void download(String url, String path,
@@ -51,13 +51,14 @@ public class RTMPTool extends AbstractTool
         if (downloading) return;
         downloading = true;
         cmd = cmdHash.clone();
+        cmd[0] = Settings.rtmpPath;
         cmd[3] = url;     cmd[5] = path;
         cmd[7] = swfHash; cmd[9] = swfSize;
         new Thread(this, "RTMPTool").start();
     }
 
     static final String cmdWithPath[] = new String[]{
-        toolPath, "--rtmp", null, "--playpath", null,
+        Settings.rtmpPath, "--rtmp", null, "--playpath", null,
         "--swfVfy", null, "--pageUrl", null,
         "--flv", null, "--flashVer", flashVer
     };
@@ -67,6 +68,7 @@ public class RTMPTool extends AbstractTool
         if (downloading) return;
         downloading = true;
         cmd = cmdWithPath.clone();
+        cmd[0] = Settings.rtmpPath;
         cmd[2] = rtmp;     cmd[4] = playpath;    cmd[6] = swfVfy;
         cmd[8] = pageUrl;  cmd[10] = outputPath;
         new Thread(this, "RTMPTool").start();
@@ -77,7 +79,7 @@ public class RTMPTool extends AbstractTool
      * otherwise it downloads only 0.9%
      */
     static final String cmdLong[] = new String[]{
-        toolPath, "--live", "--rtmp", null, "--flv", null,
+        Settings.rtmpPath, "--live", "--rtmp", null, "--flv", null,
         "--swfVfy", null, "--pageUrl", null,
         "--tcUrl", null, "--app", null,
         "--swfAge", "0", "--flashVer", flashVer
@@ -88,8 +90,9 @@ public class RTMPTool extends AbstractTool
         if (downloading) return;
         downloading = true;
         cmd = cmdLong.clone();
-        cmd[3]  = rtmp;       cmd[5]  = outputPath;
-        cmd[7]  = swfVfy;    cmd[9]  = pageUrl;
+        cmd[0] = Settings.rtmpPath;
+        cmd[3]  = rtmp;       cmd[5] = outputPath;
+        cmd[7]  = swfVfy;     cmd[9] = pageUrl;
         cmd[11] = targetUrl; cmd[13] = app;
         new Thread(this, "RTMPTool").start();
     }
@@ -137,15 +140,7 @@ public class RTMPTool extends AbstractTool
             } else {
                 listener.finished();
             }
-        } catch (InterruptedException ex) {
-            if (downloading) listener.incomplete(ex.getMessage());
-            else listener.incomplete("Cancelled");
-            Logger.getLogger(RTMPTool.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            if (downloading) listener.incomplete(ex.getMessage());
-            else listener.incomplete("Cancelled");
-            Logger.getLogger(RTMPTool.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (Exception ex) {
+        } catch (InterruptedException | IOException | NumberFormatException ex) {
             if (downloading) listener.incomplete(ex.getMessage());
             else listener.incomplete("Cancelled");
             Logger.getLogger(RTMPTool.class.getName()).log(Level.SEVERE, null, ex);

@@ -19,7 +19,7 @@ public class WGetTool extends AbstractTool
     @Override
     public void run() {
         String cmd[] = new String[]{
-            "/usr/bin/wget", "-c", url, "-O", path
+            Settings.wgetPath, "-c", url, "-O", path
         };
         try {
             downloader = Runtime.getRuntime().exec(cmd);
@@ -44,11 +44,7 @@ public class WGetTool extends AbstractTool
             } else {
                 listener.finished();
             }
-        } catch (InterruptedException ex) {
-            if (downloading) listener.incomplete(ex.getMessage());
-            else listener.incomplete("Cancelled");
-            Logger.getLogger(WGetTool.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
+        } catch (InterruptedException | IOException ex) {
             if (downloading) listener.incomplete(ex.getMessage());
             else listener.incomplete("Cancelled");
             Logger.getLogger(WGetTool.class.getName()).log(Level.SEVERE, null, ex);

@@ -14,7 +14,7 @@ import javax.swing.tree.DefaultTreeModel;
  * @author marius
  */
 public class FileLinkList extends CommonNode {
-    TreeSet<File> files = new TreeSet<File>();
+    TreeSet<File> files = new TreeSet<>();
     public FileLinkList(final DefaultTreeModel model){
         super(model);
         setAllowsChildren(true);

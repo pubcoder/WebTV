@@ -94,7 +94,7 @@ public abstract class Product extends SiteNode
     public void play() {
         if (State.Unknown.equals(state) || State.Loading.equals(state)) return;
         File f = new File(path);
-        String cmd[] = {"/usr/bin/vlc", "--started-from-file", 
+        String cmd[] = { Settings.vlcPath, "--started-from-file", 
             "--playlist-enqueue", f.getAbsolutePath()};
         try {
             Process p = Runtime.getRuntime().exec(cmd);
