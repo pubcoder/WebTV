@@ -23,7 +23,7 @@ public class TV3Play extends SiteNode
         String doc = web.getDoc(url, ref);
         if (doc == null) {status = web.getStatus(); return ; }
         final String linkPrefix = "http://www.tv3play.lt/kategorijos/";
-        final String linkBegin = "<a href=\""+linkPrefix;
+        final String linkBegin = "href=\""+linkPrefix;
         final String linkEnd = "\"";
         final String titleBegin = "<h3 class=\"clip-title\">";
         final String titleEnd = "</h3>";

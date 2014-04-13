@@ -30,7 +30,7 @@ public class ProgramList extends SiteNode
         if (doc == null) { status = web.getStatus(); return; }
         final String dateBegin = "data-published=\"<strong>Patalpinta</strong>";
         final String dateEnd = "\"";
-        final String linkBegin = "<a href=\""+url+"/";
+        final String linkBegin = "href=\""+url+"/";
         final String linkEnd = "?";
         final String nameBegin = "<h3 class=\"clip-title\">";
         final String nameEnd = "</h3>";

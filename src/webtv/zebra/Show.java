@@ -1,10 +1,5 @@
 package webtv.zebra;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.tree.DefaultTreeModel;
 import webtv.Product;
 import webtv.WGetTool;
